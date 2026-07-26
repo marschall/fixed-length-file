@@ -1,0 +1,11 @@
+package com.github.marschall.fixedlenghtfile;
+
+public interface Line {
+
+  int readUnsignedIntAt(int offset, int length);
+
+  long readUnsignedLongAt(int offset, int length);
+
+  String readTrimmedStringAt(int offset, int length);
+
+}
