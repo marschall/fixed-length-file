@@ -20,5 +20,7 @@ final class FieldDefinitions {
   static final StringFieldDefinition FIELD5 = new StringFieldDefinition("FIELD-5", (short) 6);
 
   static final UnsignedFieldDefinition FIELD6 = new UnsignedFieldDefinition("FIELD-6", (short) 2);
+  
+  static final UnsignedFieldDefinition FIELD7 = new UnsignedFieldDefinition("FIELD-7", (short) 2);
 
 }

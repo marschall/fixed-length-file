@@ -12,8 +12,6 @@ public final class FieldBinder {
   public FieldBinder() {
     this.currentOffset = 0;
   }
-  
-  
 
   public BoundStringField bind(StringFieldDefinition definition) {
     var result = new BoundStringField((short) this.currentOffset, definition);
@@ -25,6 +23,10 @@ public final class FieldBinder {
     var result = new UnsignedIntegerFieldDefinition((short) this.currentOffset, definition);
     this.currentOffset += definition.getLength();
     return result;
+  }
+
+  int getLength() {
+    return this.currentOffset;
   }
 
 }

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
 import com.github.marschall.fixedlenghtfile.BoundField.UnsignedIntegerFieldDefinition;
 
-class FixedLengthReadingTests {
+class Latin1MemorySegmentReadingLineTests {
 
   @Test
   void readFirstLine() throws IOException {
@@ -35,12 +35,12 @@ class FixedLengthReadingTests {
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment segment = channel.map(READ_ONLY, 0, fileSize, arena);
         var line = new Latin1MemorySegmentReadingLine(segment, 0L);
-        assertEquals("Fi\u00E9ld1", field1.readTrimmedStringAt(line));
-        assertEquals("Fi\u00E9ld", field2.readTrimmedStringAt(line));
-        assertEquals("i\u00E9ld3", field3.readTrimmedStringAt(line));
-        assertEquals("\u00E9l", field4.readTrimmedStringAt(line));
-        assertSame("", field5.readTrimmedStringAt(line));
-        assertEquals(12, field6.readUnsignedIntAt(line));
+        assertEquals("Fi\u00E9ld1", field1.readTrimmedStringFrom(line));
+        assertEquals("Fi\u00E9ld", field2.readTrimmedStringFrom(line));
+        assertEquals("i\u00E9ld3", field3.readTrimmedStringFrom(line));
+        assertEquals("\u00E9l", field4.readTrimmedStringFrom(line));
+        assertSame("", field5.readTrimmedStringFrom(line));
+        assertEquals(12, field6.readUnsignedIntFrom(line));
       } finally {
         fileLock.release();
       }
@@ -63,12 +63,12 @@ class FixedLengthReadingTests {
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment segment = channel.map(READ_ONLY, 0, fileSize, arena);
         var line = new Latin1MemorySegmentReadingLine(segment, 33L);
-        assertEquals("Fi\u00E9ld2", field1.readTrimmedStringAt(line));
-        assertEquals("Fi\u00E9l", field2.readTrimmedStringAt(line));
-        assertEquals("\u00E9ld3", field3.readTrimmedStringAt(line));
-        assertEquals("\u00E9ld", field4.readTrimmedStringAt(line));
-        assertSame("", field5.readTrimmedStringAt(line));
-        assertEquals(34, field6.readUnsignedIntAt(line));
+        assertEquals("Fi\u00E9ld2", field1.readTrimmedStringFrom(line));
+        assertEquals("Fi\u00E9l", field2.readTrimmedStringFrom(line));
+        assertEquals("\u00E9ld3", field3.readTrimmedStringFrom(line));
+        assertEquals("\u00E9ld", field4.readTrimmedStringFrom(line));
+        assertSame("", field5.readTrimmedStringFrom(line));
+        assertEquals(34, field6.readUnsignedIntFrom(line));
       } finally {
         fileLock.release();
       }

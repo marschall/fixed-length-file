@@ -14,6 +14,10 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
     this.definition = definition;
   }
 
+  int getLength() {
+    return this.definition.getLength();
+  }
+
   public static final class BoundStringField extends BoundField<StringFieldDefinition> {
     // TODO single char
     // TODO date
@@ -23,8 +27,12 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
       super(offset, definition);
     }
 
-    String readTrimmedStringAt(ReadingLine line) {
+    String readTrimmedStringFrom(ReadingLine line) {
       return line.readTrimmedStringAt(this.offset, this.definition.getLength());
+    }
+
+    void writeStringTo(WritingLine line, String s) {
+      line.writeStringAt(this.offset, this.definition.getLength(), s);
     }
 
   }
@@ -35,8 +43,12 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
       super(offset, definition);
     }
 
-    int readUnsignedIntAt(ReadingLine line) {
+    int readUnsignedIntFrom(ReadingLine line) {
       return line.readUnsignedIntAt(this.offset, this.definition.getLength());
+    }
+
+    void writeUnsignedIntTo(WritingLine line, int i) {
+      line.writeUnsignedIntAt(this.offset, this.definition.getLength(), i);
     }
 
   }

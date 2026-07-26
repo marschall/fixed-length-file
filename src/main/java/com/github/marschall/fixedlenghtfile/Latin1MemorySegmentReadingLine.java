@@ -3,6 +3,7 @@ package com.github.marschall.fixedlenghtfile;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 final class Latin1MemorySegmentReadingLine implements ReadingLine {
   // TODO currently unlimited lenght, could benefit from slice()
@@ -31,7 +32,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   private char readCharAt(long index) {
-    byte b = this.segment.getAtIndex(ValueLayout.JAVA_BYTE, index);
+    byte b = this.segment.getAtIndex(JAVA_BYTE, index);
     return (char) Byte.toUnsignedInt(b);
   }
 
@@ -78,7 +79,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
     }
     int bufferLength = (int) (end - start) + 1;
     byte[] buffer = new byte[bufferLength];
-    MemorySegment.copy(this.segment, ValueLayout.JAVA_BYTE, start, buffer, 0, bufferLength);
+    MemorySegment.copy(this.segment, JAVA_BYTE, start, buffer, 0, bufferLength);
     // REVIEW this.segment.asSlice().getString() would avoid one copy
     return new String(buffer, 0, bufferLength, StandardCharsets.ISO_8859_1);
   }
