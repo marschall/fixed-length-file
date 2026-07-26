@@ -4,14 +4,14 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
 
-final class Latin1MemorySegmentLine implements ReadingLine {
+final class Latin1MemorySegmentReadingLine implements ReadingLine {
   // TODO currently unlimited lenght, could benefit from slice()
   
   private final MemorySegment segment;
   
   private final long start;
 
-  Latin1MemorySegmentLine(MemorySegment segment, long start) {
+  Latin1MemorySegmentReadingLine(MemorySegment segment, long start) {
     this.segment = segment;
     this.start = start;
   }
@@ -65,7 +65,7 @@ final class Latin1MemorySegmentLine implements ReadingLine {
       }
     }
     if (start == base + length - 1L) {
-      // avoid allocation fro common case of empty string
+      // avoid allocation for the common case of an empty string
       return "";
     }
     long end = base + length - 1L;

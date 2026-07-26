@@ -34,11 +34,11 @@ class FixedLengthReadingTests {
       FileLock fileLock = channel.lock(0, fileSize, true);
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment segment = channel.map(READ_ONLY, 0, fileSize, arena);
-        var line = new Latin1MemorySegmentLine(segment, 0L);
-        assertEquals("Field1", field1.readTrimmedStringAt(line));
-        assertEquals("Field", field2.readTrimmedStringAt(line));
-        assertEquals("ield3", field3.readTrimmedStringAt(line));
-        assertEquals("el", field4.readTrimmedStringAt(line));
+        var line = new Latin1MemorySegmentReadingLine(segment, 0L);
+        assertEquals("Fi\u00E9ld1", field1.readTrimmedStringAt(line));
+        assertEquals("Fi\u00E9ld", field2.readTrimmedStringAt(line));
+        assertEquals("i\u00E9ld3", field3.readTrimmedStringAt(line));
+        assertEquals("\u00E9l", field4.readTrimmedStringAt(line));
         assertSame("", field5.readTrimmedStringAt(line));
         assertEquals(12, field6.readUnsignedIntAt(line));
       } finally {
@@ -62,11 +62,11 @@ class FixedLengthReadingTests {
       FileLock fileLock = channel.lock(0, fileSize, true);
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment segment = channel.map(READ_ONLY, 0, fileSize, arena);
-        var line = new Latin1MemorySegmentLine(segment, 33L);
-        assertEquals("Field2", field1.readTrimmedStringAt(line));
-        assertEquals("Fiel", field2.readTrimmedStringAt(line));
-        assertEquals("eld3", field3.readTrimmedStringAt(line));
-        assertEquals("eld", field4.readTrimmedStringAt(line));
+        var line = new Latin1MemorySegmentReadingLine(segment, 33L);
+        assertEquals("Fi\u00E9ld2", field1.readTrimmedStringAt(line));
+        assertEquals("Fi\u00E9l", field2.readTrimmedStringAt(line));
+        assertEquals("\u00E9ld3", field3.readTrimmedStringAt(line));
+        assertEquals("\u00E9ld", field4.readTrimmedStringAt(line));
         assertSame("", field5.readTrimmedStringAt(line));
         assertEquals(34, field6.readUnsignedIntAt(line));
       } finally {
