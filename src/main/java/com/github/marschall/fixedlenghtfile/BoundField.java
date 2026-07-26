@@ -23,7 +23,7 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
       super(offset, definition);
     }
 
-    String readTrimmedStringAt(Line line) {
+    String readTrimmedStringAt(ReadingLine line) {
       return line.readTrimmedStringAt(this.offset, this.definition.getLength());
     }
 
@@ -35,7 +35,7 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
       super(offset, definition);
     }
 
-    int readUnsignedIntAt(Line line) {
+    int readUnsignedIntAt(ReadingLine line) {
       return line.readUnsignedIntAt(this.offset, this.definition.getLength());
     }
 

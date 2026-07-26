@@ -1,6 +1,6 @@
 package com.github.marschall.fixedlenghtfile;
 
-public interface Line {
+public interface ReadingLine {
 
   int readUnsignedIntAt(int offset, int length);
 

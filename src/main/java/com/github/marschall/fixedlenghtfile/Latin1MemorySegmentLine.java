@@ -4,7 +4,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
 
-final class Latin1MemorySegmentLine implements Line {
+final class Latin1MemorySegmentLine implements ReadingLine {
+  // TODO currently unlimited lenght, could benefit from slice()
   
   private final MemorySegment segment;
   
@@ -54,9 +55,31 @@ final class Latin1MemorySegmentLine implements Line {
 
   @Override
   public String readTrimmedStringAt(int offset, int length) {
-    // TODO check for empty
-    byte[] buffer = new byte[length];
-    int bufferLength = 0;
+    long base = this.start + offset;
+    long start = base + length - 1L;
+    for (int i = 0; i < length; i++) {
+      char c = readCharAt(base + i);
+      if (c != ' ') {
+        start = base + i;
+        break;
+      }
+    }
+    if (start == base + length - 1L) {
+      // avoid allocation fro common case of empty string
+      return "";
+    }
+    long end = base + length - 1L;
+    for (long l = end; l >= start; l--) {
+      char c = readCharAt(l);
+      if (c != ' ') {
+        end = l;
+        break;
+      }
+    }
+    int bufferLength = (int) (end - start) + 1;
+    byte[] buffer = new byte[bufferLength];
+    MemorySegment.copy(this.segment, ValueLayout.JAVA_BYTE, start, buffer, 0, bufferLength);
+    // REVIEW this.segment.asSlice().getString() would avoid one copy
     return new String(buffer, 0, bufferLength, StandardCharsets.ISO_8859_1);
   }
 
