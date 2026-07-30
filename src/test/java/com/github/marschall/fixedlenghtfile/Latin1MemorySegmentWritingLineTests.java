@@ -1,10 +1,10 @@
 package com.github.marschall.fixedlenghtfile;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ class Latin1MemorySegmentWritingLineTests {
     field6.writeUnsignedIntTo(line, 12);
     field7.writeUnsignedIntTo(line, 3);
 
-    assertEquals("Fi\u00E9ld1Fi\u00E9ld       1203", new String(target, StandardCharsets.ISO_8859_1));
+    assertEquals("Fi\u00E9ld1Fi\u00E9ld       1203", new String(target, ISO_8859_1));
   }
 
   @Test

@@ -1,9 +1,9 @@
 package com.github.marschall.fixedlenghtfile;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-import java.nio.charset.StandardCharsets;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+
+import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 
 final class Latin1MemorySegmentReadingLine implements ReadingLine {
   // TODO currently unlimited lenght, could benefit from slice()
