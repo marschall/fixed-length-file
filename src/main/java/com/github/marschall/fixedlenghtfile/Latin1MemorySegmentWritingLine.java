@@ -5,7 +5,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import java.lang.foreign.MemorySegment;
 
 final class Latin1MemorySegmentWritingLine implements WritingLine {
-  // TODO currently unlimited lenght, could benefit from slice()
+  // TODO currently unlimited length, could benefit from slice()
   
   private final MemorySegment segment;
   
@@ -61,6 +61,13 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
       // .asSlice(base, padding).fill((byte) ' ');
       writeCharAt(base + stringLength + i, ' ');
     }
+  }
+  
+  @Override
+  public void writeSegmentIndicatorAt(int offset, SegmentIndicator indicator) {
+    long base = this.start + offset;
+    char c = indicator.getValue();
+    writeCharAt(base, c);
   }
 
   private void writeCharAt(long index, char c) {

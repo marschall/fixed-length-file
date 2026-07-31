@@ -37,7 +37,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   private static RuntimeException digitExpectedAt(long i, char c) {
-    return new IllegalArgumentException("expected digit at index: " + i + " but got: " + c);
+    return new FileFormatException("expected digit at index: " + i + " but got: " + c);
   }
 
   @Override
@@ -82,6 +82,18 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
     MemorySegment.copy(this.segment, JAVA_BYTE, start, buffer, 0, bufferLength);
     // REVIEW this.segment.asSlice().getString() would avoid one copy
     return new String(buffer, 0, bufferLength, StandardCharsets.ISO_8859_1);
+  }
+  
+  @Override
+  public SegmentIndicator readSegmentIndicatorAt(int offset) {
+    long base = this.start + offset;
+    char c = readCharAt(base);
+    return switch (c) {
+      case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
+      case SegmentIndicator.ABSENT_VALUE -> SegmentIndicator.ABSENT;
+      case SegmentIndicator.SPACES_VALUE -> SegmentIndicator.SPACES;
+      default -> throw new FileFormatException("Unexpected segment indicator: " + c);
+    };
   }
 
 }

@@ -7,5 +7,7 @@ public interface ReadingLine {
   long readUnsignedLongAt(int offset, int length);
 
   String readTrimmedStringAt(int offset, int length);
+  
+  SegmentIndicator readSegmentIndicatorAt(int offset);
 
 }

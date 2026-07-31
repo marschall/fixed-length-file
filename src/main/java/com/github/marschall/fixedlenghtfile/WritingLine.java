@@ -7,5 +7,7 @@ public interface WritingLine {
   void writeUnsignedLongAt(int offset, int length, long value);
 
   void writeStringAt(int offset, int length, String s);
+  
+  void writeSegmentIndicatorAt(int offset, SegmentIndicator indicator);
 
 }
