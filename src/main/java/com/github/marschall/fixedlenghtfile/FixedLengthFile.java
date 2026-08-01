@@ -67,7 +67,8 @@ public final class FixedLengthFile {
     if (position + this.maximumPrefixLength >= this.segment.byteSize()) {
       throw new FileFormatException("expected a minium of " + this.maximumPrefixLength + " to determine record type");
     }
-    String prefix = this.segment.asSlice(position, this.maximumPrefixLength).getString(0L, ISO_8859_1);
+    byte[] characters = this.segment.asSlice(position, this.maximumPrefixLength).toArray(JAVA_BYTE);
+    String prefix = new String(characters, ISO_8859_1);
     // first try direct lookup
     RecordDefinition recordDefinition = this.recordDefinitionMap.get(prefix);
     if (recordDefinition != null) {

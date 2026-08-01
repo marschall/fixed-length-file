@@ -23,13 +23,13 @@ class FixedLengthFileParserTests {
   @Test
   void sampleWithRecordTypes() throws IOException {
     Path path = Path.of("src/test/resources/sample_with_record_types.txt");
-    RecordDefinition headerDefinition = new FixedLengthRecordDefinition("H", 1);
+    RecordDefinition headerDefinition = new FixedLengthRecordDefinition("H", 2);
     RecordDefinition recordDefintion = new SegmentedRecordDefinition("R", 10,
         List.of(
+            new SegmentDefinition(7, 1),
             new SegmentDefinition(8, 1),
-            new SegmentDefinition(9, 1),
-            new SegmentDefinition(10, 1)));
-    RecordDefinition footerDefinition = new FixedLengthRecordDefinition("F", 1);
+            new SegmentDefinition(9, 1)));
+    RecordDefinition footerDefinition = new FixedLengthRecordDefinition("F", 2);
     FileDefinition fileDefinition = new FileDefinition(List.of(headerDefinition, recordDefintion, footerDefinition));
     this.parser.parseFile(fileDefinition, path, file -> {
       file.parseFile();

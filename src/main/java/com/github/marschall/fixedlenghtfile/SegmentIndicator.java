@@ -24,7 +24,7 @@ public enum SegmentIndicator {
 
   static final char PRESENT_VALUE = 'Y';
   static final char ABSENT_VALUE = 'N';
-  static final char SPACES_VALUE = ' ';
+  static final char SPACES_VALUE = 'S';
 
   abstract char getValue();
 

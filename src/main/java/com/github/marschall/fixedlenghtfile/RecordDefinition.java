@@ -19,6 +19,11 @@ public abstract sealed class RecordDefinition {
   String getPrefix() {
     return this.prefix;
   }
+  
+  @Override
+  public String toString() {
+    return "RecordType(" + this.prefix + ")";
+  }
 
   abstract int determineRecordLengt(MemorySegment memorySegment, long lineStart);
 
@@ -81,7 +86,7 @@ public abstract sealed class RecordDefinition {
         throw new IllegalArgumentException();
       }
       this.offset = offset;
-      this.length = offset;
+      this.length = length;
     }
 
     int getOffset() {
@@ -90,6 +95,11 @@ public abstract sealed class RecordDefinition {
 
     int getLength() {
       return this.length;
+    }
+    
+    @Override
+    public String toString() {
+      return "Segement(offset=" + this.offset + ", length" + this.length + ")";
     }
 
   }
