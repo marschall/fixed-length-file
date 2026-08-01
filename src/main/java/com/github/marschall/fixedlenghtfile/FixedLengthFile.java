@@ -31,16 +31,19 @@ public final class FixedLengthFile {
     return maximum;
   }
 
-  void parseFile() {
+  void parseFile(LineConsumer consumer) {
     if (this.segment.byteSize() == 0) {
       return;
     }
     long position = 0;
+    int recordNumber = 0;
     while (position < this.segment.byteSize()) {
       RecordDefinition recordDefinition = determineRecordDefinition(position);
       int recordLength = determineRecordLength(position, recordDefinition);
       MemorySegment lineSegment = this.segment.asSlice(position, recordLength);
-      Latin1MemorySegmentReadingLine line = new Latin1MemorySegmentReadingLine(lineSegment, 0L);
+      Latin1MemorySegmentReadingLine line = new Latin1MemorySegmentReadingLine(lineSegment);
+      consumer.accept(recordDefinition.getPrefix(), recordNumber, line);
+      recordNumber += 1;
       position = this.advanceBeyondNewline(position + recordLength);
     }
   }

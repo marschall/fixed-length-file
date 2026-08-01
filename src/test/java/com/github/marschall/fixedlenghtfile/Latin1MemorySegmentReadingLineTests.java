@@ -34,7 +34,7 @@ class Latin1MemorySegmentReadingLineTests {
       FileLock fileLock = channel.lock(0, fileSize, true);
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment segment = channel.map(READ_ONLY, 0, fileSize, arena);
-        var line = new Latin1MemorySegmentReadingLine(segment, 0L);
+        var line = new Latin1MemorySegmentReadingLine(segment);
         assertEquals("Fi\u00E9ld1", field1.readTrimmedStringFrom(line));
         assertEquals("Fi\u00E9ld", field2.readTrimmedStringFrom(line));
         assertEquals("i\u00E9ld3", field3.readTrimmedStringFrom(line));
@@ -62,7 +62,7 @@ class Latin1MemorySegmentReadingLineTests {
       FileLock fileLock = channel.lock(0, fileSize, true);
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment segment = channel.map(READ_ONLY, 0, fileSize, arena);
-        var line = new Latin1MemorySegmentReadingLine(segment, 33L);
+        var line = new Latin1MemorySegmentReadingLine(segment.asSlice(33L, 32L));
         assertEquals("Fi\u00E9ld2", field1.readTrimmedStringFrom(line));
         assertEquals("Fi\u00E9l", field2.readTrimmedStringFrom(line));
         assertEquals("\u00E9ld3", field3.readTrimmedStringFrom(line));

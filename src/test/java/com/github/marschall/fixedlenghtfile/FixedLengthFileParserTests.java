@@ -1,15 +1,19 @@
 package com.github.marschall.fixedlenghtfile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
-import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
 
 class FixedLengthFileParserTests {
   
@@ -31,9 +35,16 @@ class FixedLengthFileParserTests {
             new SegmentDefinition(9, 1)));
     RecordDefinition footerDefinition = new FixedLengthRecordDefinition("F", 2);
     FileDefinition fileDefinition = new FileDefinition(List.of(headerDefinition, recordDefintion, footerDefinition));
+    AtomicInteger expectedRecordNumber = new AtomicInteger(0);
+    List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
     this.parser.parseFile(fileDefinition, path, file -> {
-      file.parseFile();
+      file.parseFile((recordType, recordNumber, line) -> {
+        assertEquals(expectedRecordNumber.getAndIncrement(), recordNumber, "record number");
+        assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");
+        assertNotNull(line, "line");
+      });
     });
+    assertEquals(5, expectedRecordNumber.get(), "encounterd records");
   }
 
 }

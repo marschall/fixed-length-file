@@ -6,25 +6,24 @@ import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 
 final class Latin1MemorySegmentReadingLine implements ReadingLine {
-  // TODO currently unlimited lenght, could benefit from slice()
-  
+
   private final MemorySegment segment;
-  
-  private final long start;
 
   Latin1MemorySegmentReadingLine(MemorySegment segment, long start) {
+    this(segment);
+  }
+
+  Latin1MemorySegmentReadingLine(MemorySegment segment) {
     this.segment = segment;
-    this.start = start;
   }
 
   @Override
   public int readUnsignedIntAt(int offset, int length) {
     int value = 0;
-    long base = this.start + offset;
     for (int i = 0; i < length; i++) {
-      char c = readCharAt(base + i);
+      char c = readCharAt(offset + i);
       if (c < '0' || c > '9') {
-        throw digitExpectedAt(base + i, c);
+        throw digitExpectedAt(offset + i, c);
       }
       value = value * 10 + (c - '0');
     }
@@ -43,11 +42,10 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   @Override
   public long readUnsignedLongAt(int offset, int length) {
     long value = 0L;
-    long base = this.start + offset;
     for (int i = 0; i < length; i++) {
-      char c = readCharAt(base + i);
+      char c = readCharAt(offset + i);
       if (c < '0' || c > '9') {
-        throw digitExpectedAt(base + i, c);
+        throw digitExpectedAt(offset + i, c);
       }
       value = value * 10L + (c - '0');
     }
@@ -56,20 +54,19 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
 
   @Override
   public String readTrimmedStringAt(int offset, int length) {
-    long base = this.start + offset;
-    long start = base + length - 1L;
+    long start = offset + length - 1L;
     for (int i = 0; i < length; i++) {
-      char c = readCharAt(base + i);
+      char c = readCharAt(offset + i);
       if (c != ' ') {
-        start = base + i;
+        start = offset + i;
         break;
       }
     }
-    if (start == base + length - 1L) {
+    if (start == offset + length - 1L) {
       // avoid allocation for the common case of an empty string
       return "";
     }
-    long end = base + length - 1L;
+    long end = offset + length - 1L;
     for (long l = end; l >= start; l--) {
       char c = readCharAt(l);
       if (c != ' ') {
@@ -83,11 +80,10 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
     // REVIEW this.segment.asSlice().getString() would avoid one copy
     return new String(buffer, 0, bufferLength, StandardCharsets.ISO_8859_1);
   }
-  
+
   @Override
   public SegmentIndicator readSegmentIndicatorAt(int offset) {
-    long base = this.start + offset;
-    char c = readCharAt(base);
+    char c = readCharAt(offset);
     return switch (c) {
       case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
       case SegmentIndicator.ABSENT_VALUE -> SegmentIndicator.ABSENT;
