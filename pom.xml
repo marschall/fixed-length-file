@@ -3,11 +3,19 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.github.marschall</groupId>
-  <artifactId>fixed-length-file</artifactId>
+  <artifactId>fixed-length-file-parent</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <inceptionYear>2024</inceptionYear>
   <url>https://github.com/netceteragroup/fixed-length-file</url>
-  <name>Is Latin-1</name>
+  <name>Fixed Length File Parent</name>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>fixed-length-file-batch</module>
+    <module>fixed-length-file-core</module>
+    <module>fixed-length-file-jdbc</module>
+    <module>fixed-length-file-ui</module>
+  </modules>
 
   <developers>
     <developer>
@@ -134,37 +142,26 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-framework-bom</artifactId>
+        <version>7.0.8</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.batch</groupId>
+        <artifactId>spring-batch-bom</artifactId>
+        <version>6.0.4</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-jul</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
 
   <properties>
     <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
   </properties>
-
 </project>
