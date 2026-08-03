@@ -15,7 +15,7 @@ public abstract sealed class FieldDefinition {
     this.name = Objects.requireNonNull(name, "name");
     this.length = Utils.toPositiveShortExact(length);
   }
-  
+
   int getLength() {
     return length;
   }
@@ -24,6 +24,14 @@ public abstract sealed class FieldDefinition {
 
     public StringFieldDefinition(String name, int length) {
       super(name, length);
+    }
+
+  }
+
+  public static final class SegmentFieldDefinition extends FieldDefinition {
+
+    public SegmentFieldDefinition(String name) {
+      super(name, 1);
     }
 
   }
