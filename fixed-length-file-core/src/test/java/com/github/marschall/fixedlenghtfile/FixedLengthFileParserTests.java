@@ -16,7 +16,7 @@ import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
 
 class FixedLengthFileParserTests {
-  
+
   private FixedLengthFileParser parser;
 
   @BeforeEach
@@ -27,20 +27,24 @@ class FixedLengthFileParserTests {
   @Test
   void sampleWithRecordTypes() throws IOException {
     Path path = Path.of("src/test/resources/sample_with_record_types.txt");
+
     RecordDefinition headerDefinition = new FixedLengthRecordDefinition("H", 2);
     RecordDefinition recordDefintion = new SegmentedRecordDefinition("R", 10,
-        List.of(
-            new SegmentDefinition(7, 1),
-            new SegmentDefinition(8, 1),
-            new SegmentDefinition(9, 1)));
+            List.of(
+                    new SegmentDefinition(7, 1),
+                    new SegmentDefinition(8, 1),
+                    new SegmentDefinition(9, 1)));
     RecordDefinition footerDefinition = new FixedLengthRecordDefinition("F", 2);
     FileDefinition fileDefinition = new FileDefinition(List.of(headerDefinition, recordDefintion, footerDefinition));
+
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
+    List<Integer> expectedLenghts = List.of(2, 13, 10, 13, 2);
     this.parser.parseFile(fileDefinition, path, file -> {
       file.parseFile((recordType, recordNumber, line) -> {
         assertEquals(expectedRecordNumber.getAndIncrement(), recordNumber, "record number");
         assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");
+        assertEquals(expectedLenghts.get(recordNumber), line.getLength(), "line length");
         assertNotNull(line, "line");
       });
     });

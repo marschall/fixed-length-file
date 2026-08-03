@@ -31,7 +31,7 @@ public final class FixedLengthFile {
     return maximum;
   }
 
-  void parseFile(LineConsumer consumer) {
+  public void parseFile(LineConsumer consumer) {
     if (this.segment.byteSize() == 0) {
       return;
     }

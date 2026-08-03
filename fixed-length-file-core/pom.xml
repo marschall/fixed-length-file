@@ -30,5 +30,41 @@
       <artifactId>log4j-jul</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.marschall</groupId>
+      <artifactId>jol-agent</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- -javaagent:@{com.github.marschall:jol-agent:jar} -->
+          <argLine>
+            --sun-misc-unsafe-memory-access=allow
+            --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+            -Djol.magicFieldOffset=true
+            -XX:+UseCompactObjectHeaders
+          </argLine>
+          <!-- JOL classes are to be used from the agent, not the classpath -->
+          <classpathDependencyExcludes>
+            <classpathDependencyExclude>com.github.marschall:jol-agent</classpathDependencyExclude>
+          </classpathDependencyExcludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

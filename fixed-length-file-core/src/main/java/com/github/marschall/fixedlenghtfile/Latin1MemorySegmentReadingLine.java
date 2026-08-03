@@ -5,6 +5,11 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+
 final class Latin1MemorySegmentReadingLine implements ReadingLine {
 
   private final MemorySegment segment;
@@ -18,7 +23,9 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   @Override
-  public int readUnsignedIntAt(int offset, int length) {
+  public int readUnsignedInt(BoundIntegerField field) {
+    int offset = field.getOffset();
+    int length = field.getLength();
     int value = 0;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -40,7 +47,9 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   @Override
-  public long readUnsignedLongAt(int offset, int length) {
+  public long readUnsignedLong(BoundLongField field) {
+    int offset = field.getOffset();
+    int length = field.getLength();
     long value = 0L;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -53,7 +62,9 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   @Override
-  public String readTrimmedStringAt(int offset, int length) {
+  public String readTrimmedString(BoundStringField field) {
+    int offset = field.getOffset();
+    int length = field.getLength();
     long start = offset + length - 1L;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -82,7 +93,8 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   @Override
-  public SegmentIndicator readSegmentIndicatorAt(int offset) {
+  public SegmentIndicator readSegmentIndicator(BoundSegmentIndicatorField field) {
+    int offset = field.getOffset();
     char c = readCharAt(offset);
     return switch (c) {
       case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
@@ -90,6 +102,11 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
       case SegmentIndicator.SPACES_VALUE -> SegmentIndicator.SPACES;
       default -> throw new FileFormatException("Unexpected segment indicator: " + c);
     };
+  }
+
+  @Override
+  public int getLength() {
+    return Math.toIntExact(this.segment.byteSize());
   }
 
 }

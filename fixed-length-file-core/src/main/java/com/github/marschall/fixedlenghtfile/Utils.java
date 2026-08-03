@@ -7,6 +7,9 @@ final class Utils {
   }
   
   static short toPositiveShortExact(int i) {
+    if (i == 0) {
+      throw new IllegalArgumentException();
+    }
     if ((i & 0xFFFF_8000) != 0) {
       throw new IllegalArgumentException();
     }

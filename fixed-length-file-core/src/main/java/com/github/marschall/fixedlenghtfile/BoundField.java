@@ -13,6 +13,10 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
     this.offset = offset;
     this.definition = definition;
   }
+  
+  int getOffset() {
+    return this.offset;
+  }
 
   int getLength() {
     return this.definition.getLength();
@@ -23,34 +27,35 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
     // TODO date
     // TODO time
 
-    public BoundStringField(short offset, StringFieldDefinition definition) {
+    BoundStringField(short offset, StringFieldDefinition definition) {
       super(offset, definition);
-    }
-
-    String readTrimmedStringFrom(ReadingLine line) {
-      return line.readTrimmedStringAt(this.offset, this.definition.getLength());
-    }
-
-    void writeStringTo(WritingLine line, String s) {
-      line.writeStringAt(this.offset, this.definition.getLength(), s);
     }
 
   }
 
-  public static final class UnsignedIntegerFieldDefinition extends BoundField<UnsignedFieldDefinition> {
+  public static final class BoundIntegerField extends BoundField<UnsignedFieldDefinition> {
 
-    public UnsignedIntegerFieldDefinition(short offset, UnsignedFieldDefinition definition) {
+    BoundIntegerField(short offset, UnsignedFieldDefinition definition) {
       super(offset, definition);
     }
 
-    int readUnsignedIntFrom(ReadingLine line) {
-      return line.readUnsignedIntAt(this.offset, this.definition.getLength());
-    }
+  }
 
-    void writeUnsignedIntTo(WritingLine line, int i) {
-      line.writeUnsignedIntAt(this.offset, this.definition.getLength(), i);
+  public static final class BoundLongField extends BoundField<UnsignedFieldDefinition> {
+
+    BoundLongField(short offset, UnsignedFieldDefinition definition) {
+      super(offset, definition);
     }
 
   }
+
+  public static final class BoundSegmentIndicatorField extends BoundField<StringFieldDefinition> {
+
+    BoundSegmentIndicatorField(short offset, StringFieldDefinition definition) {
+      super(offset, definition);
+    }
+
+  }
+
 
 }

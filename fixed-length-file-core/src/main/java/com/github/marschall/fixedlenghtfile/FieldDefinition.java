@@ -8,12 +8,12 @@ public abstract sealed class FieldDefinition {
 
   private final short length;
 
-  FieldDefinition(String name, short length) {
+  FieldDefinition(String name, int length) {
     if (length <= 0) {
       throw new IllegalArgumentException("length must be positive");
     }
     this.name = Objects.requireNonNull(name, "name");
-    this.length = length;
+    this.length = Utils.toPositiveShortExact(length);
   }
   
   int getLength() {
@@ -22,7 +22,7 @@ public abstract sealed class FieldDefinition {
 
   public static final class StringFieldDefinition extends FieldDefinition {
 
-    public StringFieldDefinition(String name, short length) {
+    public StringFieldDefinition(String name, int length) {
       super(name, length);
     }
 
@@ -30,7 +30,7 @@ public abstract sealed class FieldDefinition {
 
   public static final class UnsignedFieldDefinition extends FieldDefinition {
 
-    public UnsignedFieldDefinition(String name, short length) {
+    public UnsignedFieldDefinition(String name, int length) {
       super(name, length);
     }
 
@@ -38,7 +38,7 @@ public abstract sealed class FieldDefinition {
 
   public static final class SignedFieldDefinition extends FieldDefinition {
 
-    public SignedFieldDefinition(String name, short length) {
+    public SignedFieldDefinition(String name, int length) {
       super(name, length);
     }
 

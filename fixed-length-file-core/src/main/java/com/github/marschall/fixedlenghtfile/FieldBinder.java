@@ -1,7 +1,7 @@
 package com.github.marschall.fixedlenghtfile;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
-import com.github.marschall.fixedlenghtfile.BoundField.UnsignedIntegerFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
@@ -19,8 +19,8 @@ public final class FieldBinder {
     return result;
   }
 
-  public UnsignedIntegerFieldDefinition bind(UnsignedFieldDefinition definition) {
-    var result = new UnsignedIntegerFieldDefinition((short) this.currentOffset, definition);
+  public BoundIntegerField bind(UnsignedFieldDefinition definition) {
+    var result = new BoundIntegerField((short) this.currentOffset, definition);
     this.currentOffset += definition.getLength();
     return result;
   }

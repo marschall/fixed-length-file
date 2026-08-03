@@ -1,13 +1,18 @@
 package com.github.marschall.fixedlenghtfile;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+
 public interface WritingLine {
 
-  void writeUnsignedIntAt(int offset, int length, int value);
+  void writeUnsignedInt(BoundIntegerField field, int value);
 
-  void writeUnsignedLongAt(int offset, int length, long value);
+  void writeUnsignedLong(BoundLongField field, long value);
 
-  void writeStringAt(int offset, int length, String s);
-  
-  void writeSegmentIndicatorAt(int offset, SegmentIndicator indicator);
+  void writeString(BoundStringField field, String s);
+
+  void writeSegmentIndicator(BoundSegmentIndicatorField field, SegmentIndicator indicator);
 
 }

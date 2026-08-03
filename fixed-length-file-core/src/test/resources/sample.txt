@@ -1,2 +1,2 @@
-FiÃ©ld1FiÃ©ld  iÃ©ld3  Ã©l        12
-FiÃ©ld2FiÃ©l    Ã©ld3  Ã©ld       34
+RFiéld1Fiéld  iéld3  él        12
+RFiéld2Fiél    éld3  éld       34

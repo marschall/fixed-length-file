@@ -4,6 +4,11 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.lang.foreign.MemorySegment;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+
 final class Latin1MemorySegmentWritingLine implements WritingLine {
   // TODO currently unlimited length, could benefit from slice()
   
@@ -17,7 +22,9 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
 
   @Override
-  public void writeUnsignedIntAt(int offset, int length, int value) {
+  public void writeUnsignedInt(BoundIntegerField field, int value) {
+    int offset = field.getOffset();
+    int length = field.getLength();
     // RREVIEW other option
     // buffer = toLatin1ByteArray(value);
     // .asSlice(base, padding).fill((byte) '0');
@@ -37,13 +44,17 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
 
   @Override
-  public void writeUnsignedLongAt(int offset, int length, long value) {
+  public void writeUnsignedLong(BoundLongField field, long value) {
+    int offset = field.getOffset();
+    int length = field.getLength();
     // TODO Auto-generated method stub
     
   }
 
   @Override
-  public void writeStringAt(int offset, int length, String s) {
+  public void writeString(BoundStringField field, String s) {
+    int offset = field.getOffset();
+    int length = field.getLength();
     // REVIEW this.segment.setString will add 0 terminator
     long base = this.start + offset;
     if (s != null) {
@@ -64,7 +75,8 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
   
   @Override
-  public void writeSegmentIndicatorAt(int offset, SegmentIndicator indicator) {
+  public void writeSegmentIndicator(BoundSegmentIndicatorField field, SegmentIndicator indicator) {
+    int offset = field.getOffset();
     long base = this.start + offset;
     char c = indicator.getValue();
     writeCharAt(base, c);

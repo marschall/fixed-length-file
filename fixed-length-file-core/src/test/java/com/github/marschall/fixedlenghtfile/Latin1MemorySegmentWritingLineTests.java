@@ -8,8 +8,8 @@ import java.lang.foreign.MemorySegment;
 
 import org.junit.jupiter.api.Test;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
-import com.github.marschall.fixedlenghtfile.BoundField.UnsignedIntegerFieldDefinition;
 
 class Latin1MemorySegmentWritingLineTests {
 
@@ -19,18 +19,18 @@ class Latin1MemorySegmentWritingLineTests {
     BoundStringField field1 = binder.bind(FieldDefinitions.FIELD1);
     BoundStringField field2 = binder.bind(FieldDefinitions.FIELD2);
     BoundStringField field3 = binder.bind(FieldDefinitions.FIELD3);
-    UnsignedIntegerFieldDefinition field6 = binder.bind(FieldDefinitions.FIELD6);
-    UnsignedIntegerFieldDefinition field7 = binder.bind(FieldDefinitions.FIELD7);
+    BoundIntegerField field6 = binder.bind(FieldDefinitions.FIELD6);
+    BoundIntegerField field7 = binder.bind(FieldDefinitions.FIELD7);
 
     byte[] target = new byte[binder.getLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
     var line = new Latin1MemorySegmentWritingLine(segment, 0L);
 
-    field1.writeStringTo(line, "Fi\u00E9ld1");
-    field2.writeStringTo(line, "Fi\u00E9ld");
-    field3.writeStringTo(line, null);
-    field6.writeUnsignedIntTo(line, 12);
-    field7.writeUnsignedIntTo(line, 3);
+    line.writeString(field1, "Fi\u00E9ld1");
+    line.writeString(field2, "Fi\u00E9ld");
+    line.writeString(field3, null);
+    line.writeUnsignedInt(field6, 12);
+    line.writeUnsignedInt(field7, 3);
 
     assertEquals("Fi\u00E9ld1Fi\u00E9ld       1203", new String(target, ISO_8859_1));
   }
