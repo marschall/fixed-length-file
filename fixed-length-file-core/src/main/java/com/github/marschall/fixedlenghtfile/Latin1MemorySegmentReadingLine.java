@@ -1,9 +1,13 @@
 package com.github.marschall.fixedlenghtfile;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
 
 import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
@@ -89,7 +93,28 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
     byte[] buffer = new byte[bufferLength];
     MemorySegment.copy(this.segment, JAVA_BYTE, start, buffer, 0, bufferLength);
     // REVIEW this.segment.asSlice().getString() would avoid one copy
-    return new String(buffer, 0, bufferLength, StandardCharsets.ISO_8859_1);
+    return new String(buffer, 0, bufferLength, ISO_8859_1);
+  }
+
+  String readAllAsString(int start) {
+    int bufferLength = size() - start;
+    byte[] buffer = new byte[bufferLength];
+    MemorySegment.copy(this.segment, JAVA_BYTE, start, buffer, 0, bufferLength);
+    // REVIEW this.segment.asSlice().getString() would avoid one copy but require terminating 0
+    return new String(buffer, 0, bufferLength, ISO_8859_1);
+  }
+
+  int transferFromTo(int start, char[] cbuf, int off, int len) {
+    int toRead = Math.min(this.size() - start, len);
+    for (int i = 0; i < toRead; i++) {
+      cbuf[off + i] = this.readCharAt(start + i);
+      
+    }
+    return toRead;
+  }
+
+  int size() {
+    return Math.toIntExact(this.segment.byteSize());
   }
 
   @Override
@@ -106,7 +131,74 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
 
   @Override
   public int getLength() {
-    return Math.toIntExact(this.segment.byteSize());
+    return size();
+  }
+
+  @Override
+  public Reader asReader() {
+    return new SegmentReader();
+  }
+
+  final class SegmentReader extends Reader {
+    // TODO mark
+
+    private boolean closed;
+
+    private int position;
+
+    SegmentReader() {
+      this.position = 0;
+      this.closed = false;
+    }
+
+    @Override
+    public boolean ready() throws IOException {
+      return !atEnd();
+    }
+
+    private boolean atEnd() {
+      return this.position >= Latin1MemorySegmentReadingLine.this.size();
+    }
+
+    @Override
+    public String readAllAsString() throws IOException {
+      this.closedCheck();
+      String line = Latin1MemorySegmentReadingLine.this.readAllAsString(this.position);
+      this.position = Latin1MemorySegmentReadingLine.this.size();
+      return line;
+    }
+
+    @Override
+    public List<String> readAllLines() throws IOException {
+      return List.of(this.readAllAsString());
+    }
+
+    @Override
+    public int read(char[] cbuf, int off, int len) throws IOException {
+      this.closedCheck();
+      if (len == 0) {
+        return 0;
+      }
+      Objects.checkFromIndexSize(off, len, cbuf.length);
+      if (this.atEnd()) {
+        return -1;
+      }
+      int read = Latin1MemorySegmentReadingLine.this.transferFromTo(this.position, cbuf, off, len);
+      this.position += read;
+      return read;
+    }
+
+    private void closedCheck() throws IOException {
+      if (this.closed) {
+        throw new IOException("closed Reader");
+      }
+    }
+
+    @Override
+    public void close() {
+      this.closed = true;
+    }
+
   }
 
 }

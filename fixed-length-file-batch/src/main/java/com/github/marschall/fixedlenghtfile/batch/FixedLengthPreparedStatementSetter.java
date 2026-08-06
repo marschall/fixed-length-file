@@ -1,6 +1,5 @@
 package com.github.marschall.fixedlenghtfile.batch;
 
-import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -18,7 +17,8 @@ public class FixedLengthPreparedStatementSetter implements ItemPreparedStatement
   @Override
   public void setValues(ReadingLine line, PreparedStatement ps) throws SQLException {
     int i = 1;
-    ps.setBinaryStream(i++, InputStream.nullInputStream(), line.getLength());
+    // CLOB -> jCharacterStream
+    ps.setCharacterStream(i++, line.asReader(), line.getLength());
     
   }
 

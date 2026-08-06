@@ -52,15 +52,34 @@ class Latin1MemorySegmentReadingLineTests {
           assertEquals("\u00E9l", line.readTrimmedString(field4));
           assertSame("", line.readTrimmedString(field5));
           assertEquals(12, line.readUnsignedInt(field6));
+
+          String content;
+          try {
+            content = line.asReader().readAllAsString();
+          } catch (IOException e) {
+            fail(e);
+            return;
+          }
+          assertEquals("Fi\u00E9ld1Fi\u00E9ld  i\u00E9ld3 \u00E9       12", content);
+          
         } else if (recordNumber == 1) {
           assertEquals("Fi\u00E9ld2", line.readTrimmedString(field1));
           assertEquals("Fi\u00E9l", line.readTrimmedString(field2));
-          assertEquals("\u00E9ld3", line.readTrimmedString(field3));
+          assertEquals("\u00E9ld4", line.readTrimmedString(field3));
           assertEquals("\u00E9ld", line.readTrimmedString(field4));
           assertSame("", line.readTrimmedString(field5));
           assertEquals(34, line.readUnsignedInt(field6));
+
+          String content;
+          try {
+            content = line.asReader().readAllAsString();
+          } catch (IOException e) {
+            fail(e);
+            return;
+          }
+          assertEquals("Fi\u00E9ld2Fi\u00E9ld  i\u00E9ld4 \u00E9       34", content);
         } else {
-          fail("unexpected record number: " + recordNumber);
+          fail(() -> "unexpected record number: " + recordNumber);
         }
       });
     });

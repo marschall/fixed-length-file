@@ -1,5 +1,7 @@
 package com.github.marschall.fixedlenghtfile;
 
+import java.io.Reader;
+
 import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
@@ -16,14 +18,17 @@ public interface ReadingLine {
 //  SegmentIndicator readSegmentIndicatorAt(int offset);
   
   int readUnsignedInt(BoundIntegerField field);
-  
+
   long readUnsignedLong(BoundLongField field);
-  
+
   String readTrimmedString(BoundStringField fiel);
-  
+
   SegmentIndicator readSegmentIndicator(BoundSegmentIndicatorField field);
-  
-  //TODO byte or char
+
+  // in char
   int getLength();
+  
+  // see java.sql.PreparedStatement#setCharacterStream(int, Reader, int)
+  Reader asReader();
 
 }
