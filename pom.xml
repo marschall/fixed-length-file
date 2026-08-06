@@ -12,6 +12,7 @@
 
   <modules>
     <module>fixed-length-file-batch</module>
+    <module>fixed-length-file-configuration-parser</module>
     <module>fixed-length-file-core</module>
     <module>fixed-length-file-jdbc</module>
     <module>fixed-length-file-ui</module>
