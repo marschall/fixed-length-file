@@ -16,6 +16,7 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static com.github.marschall.fixedlenghtfile.configuration.parser.ConfigurationParser.fixDataType;
 
 class ConfigurationParserTests {
 
@@ -43,16 +44,16 @@ class ConfigurationParserTests {
   }
 
   @Test
-  void fixDataType() {
+  void testFixDataType() {
     // valid ones
-    assertSame("CHAR(2)", "CHAR(2)");
-    assertSame("NUM(9)", "NUM(9)");
-    assertSame("SNUM(13)", "SNUM(13)");
+    assertSame("CHAR(2)", fixDataType("CHAR(2)"));
+    assertSame("NUM(9)", fixDataType("NUM(9)"));
+    assertSame("SNUM(13)", fixDataType("SNUM(13)"));
 
     // invalid ones
-    assertEquals("CHAR(18)", "CHAR18)");
-    assertEquals("CHAR(50)", "CHAR (50)");
-    assertEquals("NUM(2)", "NUM2");
+    assertEquals("CHAR(18)", fixDataType("CHAR18)"));
+    assertEquals("CHAR(50)", fixDataType("CHAR (50)"));
+    assertEquals("NUM(2)", fixDataType("NUM2"));
   }
 
 }

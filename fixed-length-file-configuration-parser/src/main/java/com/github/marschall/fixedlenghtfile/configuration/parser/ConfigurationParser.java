@@ -12,6 +12,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathNodes;
 
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
@@ -28,11 +29,11 @@ public class ConfigurationParser {
 
   public ConfigurationParser() throws XPathExpressionException {
     this.xPath = XPathFactory.newInstance().newXPath();
-    this.nameText = xPath.compile("name/text()");
+    this.nameText = xPath.compile("name[1]/text()");
     this.continueNumberingText = xPath.compile("continueNumbering/text()");
-    this.idText = xPath.compile("id/text()");
-    this.lengthText = xPath.compile("length/text()");
-    this.datatypeText = xPath.compile("datatype/text()");
+    this.idText = xPath.compile("id[1]/text()");
+    this.lengthText = xPath.compile("length[1]/text()");
+    this.datatypeText = xPath.compile("datatype[1]/text()");
     this.recordSegmentPath = xPath.compile("recordSegment");
     this.fieldPath = xPath.compile("fields/field");
   }
@@ -40,7 +41,7 @@ public class ConfigurationParser {
   public void parse(Path path, Set<String> interestingRecordTypes) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
     var documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
     var document = documentBuilder.parse(path.toFile());
-    for (Node record : xPath.evaluateExpression("/interface/file/section/record", document, XPathNodes.class)) {
+    for (Node record : xPath.evaluateExpression("/interface/file[1]/section/record", document, XPathNodes.class)) {
       String recordName = this.nameText.evaluateExpression(record, String.class);
       if (interestingRecordTypes.contains(recordName)) {
         processSegments(recordName, record);
@@ -61,21 +62,66 @@ public class ConfigurationParser {
       for (Node field : this.fieldPath.evaluateExpression(recordSegment, XPathNodes.class)) {
         String id = this.idText.evaluateExpression(field, String.class);
         String length = this.lengthText.evaluateExpression(field, String.class);
+        String validFromVersion = getAttributeValue(field, "validFromVersion");
+        String validToVersion = getAttributeValue(field, "validToVersion");;
         // CHAR(2) NUM(9) SNUM(13)
-        String datatype = this.datatypeText.evaluateExpression(field, String.class);
-        if (!(datatype.startsWith("CHAR(") || datatype.startsWith("NUM(") || datatype.startsWith("SNUM("))) {
-          System.out.println("  " + id + " " + length + " " + datatype);
+        String dataType = this.datatypeText.evaluateExpression(field, String.class);
+        if (!(dataType.startsWith("CHAR(") || dataType.startsWith("NUM(") || dataType.startsWith("SNUM("))) {
+          System.out.println("  " + id + " " + length + " " + dataType);
         }
-        if (!datatype.endsWith(")")) {
-          System.out.println("  " + id + " " + length + " " + datatype);
+        if (!dataType.endsWith(")")) {
+          System.out.println("  " + id + " " + length + " " + dataType);
+        }
+        dataType = fixDataType(dataType);
+        if (Integer.parseInt(length) != extractLengt(dataType)) {
+          System.out.println("  " + id + " " + length + " " + dataType);
         }
       }
       isFirst = false;
     }
   }
 
-  static String fixDataType(String datatype) {
-    return datatype;
+  private String getAttributeValue(Node node, String attributeValue) {
+    NamedNodeMap attributes = node.getAttributes();
+    Node attribute = attributes.getNamedItem(attributeValue);
+    if (attribute != null) {
+      return attribute.getTextContent();
+    } else {
+      return null;
+    }
+  }
+  
+  int extractLengt(String dataType) {
+    return Integer.parseInt(dataType, dataType.indexOf('(') + 1, dataType.length() - 1, 10);
+  }
+
+  static String fixDataType(String dataType) {
+    if (dataType.indexOf(' ') != -1) {
+      dataType = dataType.replace(" ", "");
+    }
+    if (dataType.charAt(dataType.length() - 1) != ')') {
+      dataType = dataType + ')';
+    }
+    if (dataType.indexOf('(') == -1) {
+      dataType = insertOpeningBacket(dataType);
+    }
+    return dataType;
+  }
+
+  private static String insertOpeningBacket(String dataType) {
+    StringBuilder builder = new StringBuilder(dataType.length() + 1);
+    boolean firstNumeric = true;
+    for (int i = 0; i < dataType.length(); i++) {
+      char c = dataType.charAt(i);
+      if (c >= '0' && c <= '9') {
+        if (firstNumeric) {
+          builder.append('(');
+        }
+        firstNumeric = false;
+      }
+      builder.append(c);
+    }
+    return builder.toString();
   }
 
 }
