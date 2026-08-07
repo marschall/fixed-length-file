@@ -26,16 +26,18 @@ public class ConfigurationParser {
   private final XPathExpression datatypeText;
   private final XPathExpression recordSegmentPath;
   private final XPathExpression fieldPath;
+  private final InterfaceVersion currentVersion;
 
-  public ConfigurationParser() throws XPathExpressionException {
+  public ConfigurationParser(InterfaceVersion currentVersion) throws XPathExpressionException {
+    this.currentVersion = currentVersion;
     this.xPath = XPathFactory.newInstance().newXPath();
-    this.nameText = xPath.compile("name[1]/text()");
-    this.continueNumberingText = xPath.compile("continueNumbering/text()");
-    this.idText = xPath.compile("id[1]/text()");
-    this.lengthText = xPath.compile("length[1]/text()");
-    this.datatypeText = xPath.compile("datatype[1]/text()");
-    this.recordSegmentPath = xPath.compile("recordSegment");
-    this.fieldPath = xPath.compile("fields/field");
+    this.nameText = xPath.compile("./name[1]/text()");
+    this.continueNumberingText = xPath.compile("./continueNumbering/text()");
+    this.idText = xPath.compile("./id[1]/text()");
+    this.lengthText = xPath.compile("./length[1]/text()");
+    this.datatypeText = xPath.compile("./datatype[1]/text()");
+    this.recordSegmentPath = xPath.compile("./recordSegment");
+    this.fieldPath = xPath.compile("./fields/field");
   }
   
   public void parse(Path path, Set<String> interestingRecordTypes) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
@@ -52,40 +54,54 @@ public class ConfigurationParser {
   private void processSegments(String recordName, Node record) throws XPathExpressionException {
     System.out.println("==");
     System.out.println(recordName);
-    boolean isFirst = true;
+    boolean isFirstSegment = true;
     for (Node recordSegment : this.recordSegmentPath.evaluateExpression(record, XPathNodes.class)) {
       String continueNumbering = this.continueNumberingText.evaluateExpression(recordSegment, String.class);
-      boolean isFixedSegment = isFirst || "true".equals(continueNumbering);
+      boolean isFixedSegment = isFirstSegment || "true".equals(continueNumbering);
       if (!isFixedSegment) {
         System.out.println("--");
       }
       for (Node field : this.fieldPath.evaluateExpression(recordSegment, XPathNodes.class)) {
-        String id = this.idText.evaluateExpression(field, String.class);
-        String length = this.lengthText.evaluateExpression(field, String.class);
-        String validFromVersion = getAttributeValue(field, "validFromVersion");
-        String validToVersion = getAttributeValue(field, "validToVersion");;
-        // CHAR(2) NUM(9) SNUM(13)
-        String dataType = this.datatypeText.evaluateExpression(field, String.class);
-        if (!(dataType.startsWith("CHAR(") || dataType.startsWith("NUM(") || dataType.startsWith("SNUM("))) {
-          System.out.println("  " + id + " " + length + " " + dataType);
-        }
-        if (!dataType.endsWith(")")) {
-          System.out.println("  " + id + " " + length + " " + dataType);
-        }
-        dataType = fixDataType(dataType);
-        if (Integer.parseInt(length) != extractLengt(dataType)) {
-          System.out.println("  " + id + " " + length + " " + dataType);
+        if (this.isInCurrentVersion(field)) {
+          String id = this.idText.evaluateExpression(field, String.class);
+          String length = this.lengthText.evaluateExpression(field, String.class);
+          // CHAR(2) NUM(9) SNUM(13)
+          String dataType = this.datatypeText.evaluateExpression(field, String.class);
+          if (!(dataType.startsWith("CHAR(") || dataType.startsWith("NUM(") || dataType.startsWith("SNUM("))) {
+            System.out.println("  " + id + " " + length + " " + dataType);
+          }
+          if (!dataType.endsWith(")")) {
+            System.out.println("  " + id + " " + length + " " + dataType);
+          }
+          dataType = fixDataType(dataType);
+          if (Integer.parseInt(length) != extractLengt(dataType)) {
+            System.out.println("  " + id + " " + length + " " + dataType);
+          }
         }
       }
-      isFirst = false;
+      isFirstSegment = false;
     }
   }
+  
+  private boolean isInCurrentVersion(Node field) {
+    InterfaceVersion validToVersion = getVersionAttributeValue(field, "validToVersion");
+    // TODO check
+    if (validToVersion != null && validToVersion.compareTo(this.currentVersion) <= 0) {
+      return false;
+    }
+    // TODO check
+    InterfaceVersion validFromVersion = getVersionAttributeValue(field, "validFromVersion");
+    if (validFromVersion != null && validFromVersion.compareTo(this.currentVersion) >= 0) {
+      return false;
+    }
+    return true;
+  }
 
-  private String getAttributeValue(Node node, String attributeValue) {
+  private InterfaceVersion getVersionAttributeValue(Node node, String attributeValue) {
     NamedNodeMap attributes = node.getAttributes();
     Node attribute = attributes.getNamedItem(attributeValue);
     if (attribute != null) {
-      return attribute.getTextContent();
+      return new InterfaceVersion(attribute.getTextContent());
     } else {
       return null;
     }

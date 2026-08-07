@@ -1,8 +1,9 @@
 package com.github.marschall.fixedlenghtfile.configuration.parser;
 /**
- * A version made up of up to 3 integer components separated by {@code '.'}.
+ * A version made up of up to 3 integer components separated by {@code '.'}
+ * and an optional revision preceeded by {@code '.'},.
  */
-final class ComparableVersion implements Comparable<ComparableVersion> {
+final class InterfaceVersion implements Comparable<InterfaceVersion> {
 
   private static final int MAX_VALUE = Byte.toUnsignedInt((byte) -1);
 
@@ -11,15 +12,13 @@ final class ComparableVersion implements Comparable<ComparableVersion> {
   private final byte micro;
 
   /**
-   * Constructs a new {@link ComparableVersion}.
+   * Constructs a new {@link InterfaceVersion}.
    *
    * @param version the version string made up of up to 3 positive integer components separated by {@code '.'}
-   *                and an optional final one preceeded by {@code '-'},
-   *                not {@code null},
-   *                will be retained for {@link #toString()}
+   *                and an optional revision preceeded by {@code '.'},
+   *                not {@code null}
    */
-  public ComparableVersion(String version) {
-
+  InterfaceVersion(String version) {
     int end = version.indexOf('.');
     if (end == -1) {
       this.major = parseByte(version, 0, version.length());
@@ -35,13 +34,25 @@ final class ComparableVersion implements Comparable<ComparableVersion> {
       } else {
         this.minor = parseByte(version, start, end);
         start = end + 1;
-        end = version.indexOf('.', start);
-        if (end != -1) {
-          throw new IllegalArgumentException("only three dots supported");
-        }
-        this.micro = parseByte(version, start, version.length());
+        end = findMicroEnd(version, start);
+        this.micro = parseByte(version, start, end);
       }
     }
+  }
+  
+  private static int findMicroEnd(String version, int start) {
+    int dotEnd = version.indexOf('.', start);
+    int spaceEnd = version.indexOf(' ', start);
+    if (dotEnd == -1 && spaceEnd != -1) {
+      return spaceEnd;
+    }
+    if (spaceEnd == -1 && dotEnd != -1) {
+      return dotEnd;
+    }
+    if (spaceEnd == -1 && dotEnd == -1) {
+      return version.length();
+    }
+    return Math.min(dotEnd, spaceEnd);
   }
 
   private static byte parseByte(String s, int beginIndex, int endIndex) {
@@ -59,7 +70,7 @@ final class ComparableVersion implements Comparable<ComparableVersion> {
   }
 
   @Override
-  public int compareTo(ComparableVersion o) {
+  public int compareTo(InterfaceVersion o) {
     int result = Byte.compareUnsigned(this.major, o.major);
     if (result != 0) {
       return result;
@@ -76,10 +87,10 @@ final class ComparableVersion implements Comparable<ComparableVersion> {
     if (obj == this) {
       return true;
     }
-    if (!(obj instanceof ComparableVersion)) {
+    if (!(obj instanceof InterfaceVersion)) {
       return false;
     }
-    ComparableVersion other = (ComparableVersion) obj;
+    InterfaceVersion other = (InterfaceVersion) obj;
     return (this.major == other.major)
             && (this.minor == other.minor)
             && (this.micro == other.micro);

@@ -24,14 +24,14 @@ class ConfigurationParserTests {
 
   @BeforeEach
   void setUp() throws XPathExpressionException {
-    this.parser = new ConfigurationParser();
+    this.parser = new ConfigurationParser(new InterfaceVersion("2.67.0"));
   }
 
   @Test
   void parseReference() throws Exception {
     Path referenceFile = findFileIn(Paths.get("src/test/resources/reference"), "xml");
     assertNotNull(referenceFile);
-    this.parser.parse(referenceFile, Set.of("HD", "KT", "TT"));
+    this.parser.parse(referenceFile, Set.of("HD", "KT", "TR"));
   }
 
   private static Path findFileIn(Path basePath, String exentsion) throws IOException {
