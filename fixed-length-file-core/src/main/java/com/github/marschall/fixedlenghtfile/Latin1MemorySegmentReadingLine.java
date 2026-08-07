@@ -141,6 +141,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
 
   final class SegmentReader extends Reader {
     // TODO mark
+    // TODO transferTo
 
     private boolean closed;
 

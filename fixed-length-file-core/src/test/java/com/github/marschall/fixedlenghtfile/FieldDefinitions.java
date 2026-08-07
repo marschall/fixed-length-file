@@ -8,7 +8,7 @@ final class FieldDefinitions {
   private FieldDefinitions() {
     throw new AssertionError("not instantiable");
   }
-  
+
   static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
 
   static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 6);

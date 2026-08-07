@@ -1,5 +1,6 @@
 package com.github.marschall.fixedlenghtfile;
 
+import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
@@ -9,8 +10,8 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
   
   final D definition;
   
-  BoundField(short offset, D definition) {
-    this.offset = offset;
+  BoundField(int offset, D definition) {
+    this.offset = Utils.toPositiveShortExact(offset);
     this.definition = definition;
   }
   
@@ -27,7 +28,7 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
     // TODO date
     // TODO time
 
-    BoundStringField(short offset, StringFieldDefinition definition) {
+    BoundStringField(int offset, StringFieldDefinition definition) {
       super(offset, definition);
     }
 
@@ -35,7 +36,7 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
 
   public static final class BoundIntegerField extends BoundField<UnsignedFieldDefinition> {
 
-    BoundIntegerField(short offset, UnsignedFieldDefinition definition) {
+    BoundIntegerField(int offset, UnsignedFieldDefinition definition) {
       super(offset, definition);
     }
 
@@ -43,15 +44,15 @@ public abstract sealed class BoundField<D extends FieldDefinition> {
 
   public static final class BoundLongField extends BoundField<UnsignedFieldDefinition> {
 
-    BoundLongField(short offset, UnsignedFieldDefinition definition) {
+    BoundLongField(int offset, UnsignedFieldDefinition definition) {
       super(offset, definition);
     }
 
   }
 
-  public static final class BoundSegmentIndicatorField extends BoundField<StringFieldDefinition> {
+  public static final class BoundSegmentIndicatorField extends BoundField<SegmentFieldDefinition> {
 
-    BoundSegmentIndicatorField(short offset, StringFieldDefinition definition) {
+    BoundSegmentIndicatorField(int offset, SegmentFieldDefinition definition) {
       super(offset, definition);
     }
 

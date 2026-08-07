@@ -42,7 +42,7 @@ public final class FixedLengthFile {
       int recordLength = determineRecordLength(position, recordDefinition);
       MemorySegment lineSegment = this.segment.asSlice(position, recordLength);
       Latin1MemorySegmentReadingLine line = new Latin1MemorySegmentReadingLine(lineSegment);
-      consumer.accept(recordDefinition.getPrefix(), recordNumber, line);
+      consumer.accept(recordDefinition.getType(), recordNumber, line);
       recordNumber += 1;
       position = this.advanceBeyondNewline(position + recordLength);
     }

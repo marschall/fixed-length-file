@@ -67,16 +67,7 @@ public class ConfigurationParser {
           String length = this.lengthText.evaluateExpression(field, String.class);
           // CHAR(2) NUM(9) SNUM(13)
           String dataType = this.datatypeText.evaluateExpression(field, String.class);
-          if (!(dataType.startsWith("CHAR(") || dataType.startsWith("NUM(") || dataType.startsWith("SNUM("))) {
-            System.out.println("  " + id + " " + length + " " + dataType);
-          }
-          if (!dataType.endsWith(")")) {
-            System.out.println("  " + id + " " + length + " " + dataType);
-          }
-          dataType = fixDataType(dataType);
-          if (Integer.parseInt(length) != extractLengt(dataType)) {
-            System.out.println("  " + id + " " + length + " " + dataType);
-          }
+          System.out.println("  " + id + " " + length + " " + dataType);
         }
       }
       isFirstSegment = false;
@@ -84,6 +75,11 @@ public class ConfigurationParser {
   }
   
   private boolean isInCurrentVersion(Node field) {
+    // TODO H12 missing
+    // validFromVersion="2.65.0.d.1" validToVersion="2.66.0.d.1"
+    // validFromVersion="2.66.0.d.1" validToVersion="2.66.0.f.1"
+    // validFromVersion="2.66.0.f.1" validToVersion="2.67.0.d.1"
+    // validFromVersion="2.67.0.d.1"
     InterfaceVersion validToVersion = getVersionAttributeValue(field, "validToVersion");
     // TODO check
     if (validToVersion != null && validToVersion.compareTo(this.currentVersion) <= 0) {

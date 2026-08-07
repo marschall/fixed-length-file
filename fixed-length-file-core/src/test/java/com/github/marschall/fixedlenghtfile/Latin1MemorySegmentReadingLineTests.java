@@ -1,12 +1,12 @@
 package com.github.marschall.fixedlenghtfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -15,7 +15,6 @@ import org.openjdk.jol.info.ClassLayout;
 
 import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
 import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
-import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 
 class Latin1MemorySegmentReadingLineTests {
 
@@ -24,13 +23,31 @@ class Latin1MemorySegmentReadingLineTests {
 
   @BeforeEach
   void setUp() {
+    this.fileDefinition = FileDefinition.builder()
+        .defineRecordType("R", binder -> {
+          binder.bind(FieldDefinitions.TYPE);
+          binder.bind(FieldDefinitions.FIELD1);
+          binder.bind(FieldDefinitions.FIELD2);
+          binder.bind(FieldDefinitions.FIELD3);
+          binder.bind(FieldDefinitions.FIELD4);
+          binder.bind(FieldDefinitions.FIELD5);
+          binder.bind(FieldDefinitions.FIELD6);
+        })
+      .build();
+    
     this.parser = new FixedLengthFileParser();
-    RecordDefinition recordDefintion = new FixedLengthRecordDefinition("R", 33);
-    this.fileDefinition = new FileDefinition(List.of(recordDefintion));
+  }
+  
+  @Test
+  void recordDefinitionLength() {
+    var recordDefinition = this.fileDefinition.getRecordDefinitionMap().get("R");
+    assertNotNull(recordDefinition);
+    assertEquals(33, recordDefinition.getLength());
   }
 
   @Test
   void readLines() throws IOException {
+    
     Path path = Path.of("src/test/resources/sample.txt");
 
     FieldBinder binder = new FieldBinder();
@@ -60,7 +77,7 @@ class Latin1MemorySegmentReadingLineTests {
             fail(e);
             return;
           }
-          assertEquals("Fi\u00E9ld1Fi\u00E9ld  i\u00E9ld3 \u00E9       12", content);
+          assertEquals("RFi\u00E9ld1Fi\u00E9ld  i\u00E9ld3  \u00E9l        12", content);
           
         } else if (recordNumber == 1) {
           assertEquals("Fi\u00E9ld2", line.readTrimmedString(field1));
@@ -77,7 +94,7 @@ class Latin1MemorySegmentReadingLineTests {
             fail(e);
             return;
           }
-          assertEquals("Fi\u00E9ld2Fi\u00E9ld  i\u00E9ld4 \u00E9       34", content);
+          assertEquals("RFi\u00E9ld2Fi\u00E9l    \u00E9ld4  \u00E9ld       34", content);
         } else {
           fail(() -> "unexpected record number: " + recordNumber);
         }

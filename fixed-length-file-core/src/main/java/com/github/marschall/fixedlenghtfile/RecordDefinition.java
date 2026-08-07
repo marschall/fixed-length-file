@@ -3,39 +3,65 @@ package com.github.marschall.fixedlenghtfile;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.lang.foreign.MemorySegment;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import com.github.marschall.fixedlenghtfile.FileDefinition.FieldAndOffset;
 
 public abstract sealed class RecordDefinition {
 
-  private final String prefix;
-  final int length;
+  private final String type;
+  private final int length;
+  private final Map<FieldDefinition, FieldAndOffset> fieldMap;
 
-  RecordDefinition(String prefix, int length) {
-    this.length = length;
-    this.prefix = Objects.requireNonNull(prefix, "prefix");
+  RecordDefinition(String type, List<FieldAndOffset> records) {
+    this.length = computeLength(records);
+    this.type = Objects.requireNonNull(type, "type");
+    this.fieldMap = buildFieldMap(records);
   }
 
-  String getPrefix() {
-    return this.prefix;
+  private static Map<FieldDefinition, FieldAndOffset> buildFieldMap(List<FieldAndOffset> records) {
+    Map<FieldDefinition, FieldAndOffset> map = HashMap.newHashMap(records.size());
+    for (FieldAndOffset record : records) {
+      map.put(record.definition(), record);
+    }
+    return map;
+  }
+  
+  int getLength() {
+    return this.length;
+  }
+
+  private static int computeLength(List<FieldAndOffset> records) {
+    int totalLength = 0;
+    for (FieldAndOffset record : records) {
+      totalLength += record.length();
+    }
+    return totalLength;
+  }
+
+  String getType() {
+    return this.type;
   }
   
   @Override
   public String toString() {
-    return "RecordType(" + this.prefix + ")";
+    return "RecordType(" + this.type + ")";
   }
 
   abstract int determineRecordLengt(MemorySegment memorySegment, long lineStart);
 
   public static final class FixedLengthRecordDefinition extends RecordDefinition {
 
-    FixedLengthRecordDefinition(String prefix, int length) {
-      super(prefix, length);
+    FixedLengthRecordDefinition(String type, List<FieldAndOffset> records) {
+      super(type, records);
     }
 
     @Override
     int determineRecordLengt(MemorySegment memorySegment, long lineStart) {
-      return this.length;
+      return this.getLength();
     }
 
   }
@@ -44,15 +70,15 @@ public abstract sealed class RecordDefinition {
 
     private final List<SegmentDefinition> segmentDefinitions;
 
-    SegmentedRecordDefinition(String prefix, int baseLength, List<SegmentDefinition> segmentDefinitions) {
-      super(prefix, baseLength);
+    SegmentedRecordDefinition(String type, List<FieldAndOffset> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
+      super(type, fixedRecords);
       this.segmentDefinitions = segmentDefinitions;
     }
 
     @Override
     int determineRecordLengt(MemorySegment memorySegment, long lineStart) {
       // TODO Move to fixed length file?
-      int recordLength = this.length;
+      int recordLength = this.getLength();
       for (SegmentDefinition segmentDefinition : this.segmentDefinitions) {
         if (this.isSegmentPresentInLine(memorySegment, lineStart, segmentDefinition)) {
           recordLength += segmentDefinition.getLength();

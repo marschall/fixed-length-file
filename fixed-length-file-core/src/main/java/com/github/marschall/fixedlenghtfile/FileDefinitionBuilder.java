@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 public interface FileDefinitionBuilder {
 
-  void defineRecordType(String recordType, Consumer<FixedPartFieldBinder> fixedPartBinder);
+  FileDefinitionBuilder defineRecordType(String recordType, Consumer<FixedPartFieldBinder> binderConsumer);
 
   FileDefinition build();
 

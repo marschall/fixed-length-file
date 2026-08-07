@@ -20,6 +20,31 @@ public abstract sealed class FieldDefinition {
     return length;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    // name is unique
+    if (obj == null) {
+      return false;
+    }
+    if (obj == this) {
+      return true;
+    }
+    if (obj.getClass() != this.getClass()) {
+      return false;
+    }
+    return this.name.equals(((FieldDefinition) obj).name);
+  }
+
+  @Override
+  public int hashCode() {
+    return ((31 + this.name.hashCode()) * 31) + this.getClass().hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return this.name;
+  }
+
   public static final class StringFieldDefinition extends FieldDefinition {
 
     public StringFieldDefinition(String name, int length) {
