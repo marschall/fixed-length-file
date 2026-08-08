@@ -35,6 +35,11 @@
       <artifactId>jol-agent</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.marschall</groupId>
+      <artifactId>fixed-length-file-configuration-parser</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   
   <build>

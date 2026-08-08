@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openjdk.jol.info.ClassLayout;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 
 class Latin1MemorySegmentReadingLineTests {
 

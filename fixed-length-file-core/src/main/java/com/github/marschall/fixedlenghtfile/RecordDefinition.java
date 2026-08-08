@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FileDefinition.FieldAndOffset;
@@ -72,6 +72,9 @@ public abstract sealed class RecordDefinition {
   }
 
   BoundSegmentIndicatorField bindSegmentIndicatorField(StringFieldDefinition definition) {
+    if (definition.getLength() != 1) {
+      throw new IllegalArgumentException("Segment indicator must have length 1");
+    }
     FieldAndOffset fieldAndOffset = this.getRequiredFieldDefinition(definition);
     return new BoundSegmentIndicatorField(fieldAndOffset.offset(), definition);
   }
@@ -81,7 +84,7 @@ public abstract sealed class RecordDefinition {
     return "RecordType(" + this.type + ")";
   }
 
-  abstract int determineRecordLengt(MemorySegment memorySegment, long lineStart);
+  abstract int determineRecordLength(MemorySegment memorySegment, long lineStart);
 
   public static final class FixedLengthRecordDefinition extends RecordDefinition {
 
@@ -98,7 +101,7 @@ public abstract sealed class RecordDefinition {
     }
 
     @Override
-    int determineRecordLengt(MemorySegment memorySegment, long lineStart) {
+    int determineRecordLength(MemorySegment memorySegment, long lineStart) {
       return this.getMaxiumLength();
     }
 
@@ -132,7 +135,7 @@ public abstract sealed class RecordDefinition {
     }
 
     @Override
-    int determineRecordLengt(MemorySegment memorySegment, long lineStart) {
+    int determineRecordLength(MemorySegment memorySegment, long lineStart) {
       // TODO Move to fixed length file?
       int recordLength = this.baseLength;
       for (SegmentDefinition segmentDefinition : this.segmentDefinitions) {

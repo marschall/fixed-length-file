@@ -32,7 +32,7 @@ public class ConfigurationParser {
     this.currentVersion = currentVersion;
     this.xPath = XPathFactory.newInstance().newXPath();
     this.nameText = xPath.compile("./name[1]/text()");
-    this.continueNumberingText = xPath.compile("./continueNumbering/text()");
+    this.continueNumberingText = xPath.compile("./continueNumbering[1]/text()");
     this.idText = xPath.compile("./id[1]/text()");
     this.lengthText = xPath.compile("./length[1]/text()");
     this.datatypeText = xPath.compile("./datatype[1]/text()");

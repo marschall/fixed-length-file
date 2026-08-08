@@ -4,10 +4,10 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.lang.foreign.MemorySegment;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 
 final class Latin1MemorySegmentWritingLine implements WritingLine {
   // TODO currently unlimited length, could benefit from slice()

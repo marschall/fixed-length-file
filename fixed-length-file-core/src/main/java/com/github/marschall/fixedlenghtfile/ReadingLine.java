@@ -2,26 +2,25 @@ package com.github.marschall.fixedlenghtfile;
 
 import java.io.Reader;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentedField;
 
 public interface ReadingLine {
 
-//  int readUnsignedIntAt(int offset, int length);
-//
-//  long readUnsignedLongAt(int offset, int length);
-//
-//  String readTrimmedStringAt(int offset, int length);
-//  
-//  SegmentIndicator readSegmentIndicatorAt(int offset);
-  
   int readUnsignedInt(BoundIntegerField field);
 
   long readUnsignedLong(BoundLongField field);
 
-  String readTrimmedString(BoundStringField fiel);
+  String readTrimmedString(BoundStringField field);
+
+  int readUnsignedInt(BoundSegmentedField<BoundIntegerField> field);
+
+  long readUnsignedLong(BoundSegmentedField<BoundLongField> field);
+
+  String readTrimmedString(BoundSegmentedField<BoundStringField> field);
 
   SegmentIndicator readSegmentIndicator(BoundSegmentIndicatorField field);
 

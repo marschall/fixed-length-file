@@ -6,6 +6,9 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import java.lang.foreign.MemorySegment;
 import java.util.Map;
 
+import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
+
 public final class FixedLengthFile {
   
   private final byte CR = 13;
@@ -15,6 +18,7 @@ public final class FixedLengthFile {
   private final MemorySegment segment;
   private final Map<String, RecordDefinition> recordDefinitionMap;
   private final int maximumPrefixLength;
+  private int[] segmentOffsets;
 
   FixedLengthFile(FileDefinition fileDefinition, MemorySegment segment) {
     this.fileDefinition = fileDefinition;
@@ -33,7 +37,10 @@ public final class FixedLengthFile {
       RecordDefinition recordDefinition = determineRecordDefinition(position);
       int recordLength = determineRecordLength(position, recordDefinition);
       MemorySegment lineSegment = this.segment.asSlice(position, recordLength);
-      Latin1MemorySegmentReadingLine line = new Latin1MemorySegmentReadingLine(lineSegment);
+      Latin1MemorySegmentReadingLine line = switch (recordDefinition) {
+        case FixedLengthRecordDefinition _ -> new FixedLatin1MemorySegmentReadingLine(lineSegment);
+        case SegmentedRecordDefinition _ -> new SegmentedLatin1MemorySegmentReadingLine(lineSegment);
+      };
       consumer.accept(recordDefinition.getType(), recordNumber, line);
       recordNumber += 1;
       position = this.advanceBeyondNewline(position + recordLength);
@@ -79,9 +86,12 @@ public final class FixedLengthFile {
     }
     throw new FileFormatException("unknown record type " + prefix);
   }
+  
+  private int[] getSegmentOffsets(SegmentedRecordDefinition recordDefinition) {
+  }
 
   private int determineRecordLength(long position, RecordDefinition recordDefinition) {
-    return recordDefinition.determineRecordLengt(this.segment, position);
+    return recordDefinition.determineRecordLength(this.segment, position);
   }
 
 }

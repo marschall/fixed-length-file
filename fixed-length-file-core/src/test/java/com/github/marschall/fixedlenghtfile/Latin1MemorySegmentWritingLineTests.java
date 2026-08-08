@@ -8,8 +8,8 @@ import java.lang.foreign.MemorySegment;
 
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 
 class Latin1MemorySegmentWritingLineTests {
 

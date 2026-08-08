@@ -1,9 +1,9 @@
 package com.github.marschall.fixedlenghtfile;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 
 public interface WritingLine {
 

@@ -9,26 +9,27 @@ import java.lang.foreign.MemorySegment;
 import java.util.List;
 import java.util.Objects;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 
-final class Latin1MemorySegmentReadingLine implements ReadingLine {
+abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
+  permits FixedLatin1MemorySegmentReadingLine, SegmentedLatin1MemorySegmentReadingLine {
 
-  private final MemorySegment segment;
-
-  Latin1MemorySegmentReadingLine(MemorySegment segment, long start) {
-    this(segment);
-  }
+  private final MemorySegment memorySegment;
 
   Latin1MemorySegmentReadingLine(MemorySegment segment) {
-    this.segment = segment;
+    this.memorySegment = segment;
   }
 
   @Override
   public int readUnsignedInt(BoundIntegerField field) {
-    int offset = field.getOffset();
+    return readUnsignedInt(0, field);
+  }
+
+  protected int readUnsignedInt(int baseOffset, BoundIntegerField field) {
+    int offset = baseOffset + field.getOffset();
     int length = field.getLength();
     int value = 0;
     for (int i = 0; i < length; i++) {
@@ -42,7 +43,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   private char readCharAt(long index) {
-    byte b = this.segment.getAtIndex(JAVA_BYTE, index);
+    byte b = this.memorySegment.getAtIndex(JAVA_BYTE, index);
     return (char) Byte.toUnsignedInt(b);
   }
 
@@ -65,8 +66,26 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
     return value;
   }
 
+  protected long readUnsignedLong(int baseOffset, BoundLongField field) {
+    int offset = baseOffset + field.getOffset();
+    int length = field.getLength();
+    long value = 0L;
+    for (int i = 0; i < length; i++) {
+      char c = readCharAt(offset + i);
+      if (c < '0' || c > '9') {
+        throw digitExpectedAt(offset + i, c);
+      }
+      value = value * 10L + (c - '0');
+    }
+    return value;
+  }
+
   @Override
   public String readTrimmedString(BoundStringField field) {
+    return readTrimmedString(0, field);
+  }
+  
+  protected String readTrimmedString(int baseOffset, BoundStringField field) {
     int offset = field.getOffset();
     int length = field.getLength();
     long start = offset + length - 1L;
@@ -91,7 +110,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
     }
     int bufferLength = (int) (end - start) + 1;
     byte[] buffer = new byte[bufferLength];
-    MemorySegment.copy(this.segment, JAVA_BYTE, start, buffer, 0, bufferLength);
+    MemorySegment.copy(this.memorySegment, JAVA_BYTE, start, buffer, 0, bufferLength);
     // REVIEW this.segment.asSlice().getString() would avoid one copy
     return new String(buffer, 0, bufferLength, ISO_8859_1);
   }
@@ -99,7 +118,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   String readAllAsString(int start) {
     int bufferLength = size() - start;
     byte[] buffer = new byte[bufferLength];
-    MemorySegment.copy(this.segment, JAVA_BYTE, start, buffer, 0, bufferLength);
+    MemorySegment.copy(this.memorySegment, JAVA_BYTE, start, buffer, 0, bufferLength);
     // REVIEW this.segment.asSlice().getString() would avoid one copy but require terminating 0
     return new String(buffer, 0, bufferLength, ISO_8859_1);
   }
@@ -114,7 +133,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
   }
 
   int size() {
-    return Math.toIntExact(this.segment.byteSize());
+    return Math.toIntExact(this.memorySegment.byteSize());
   }
 
   @Override
@@ -136,10 +155,10 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
 
   @Override
   public Reader asReader() {
-    return new SegmentReader();
+    return new MemorySegmentReader();
   }
 
-  final class SegmentReader extends Reader {
+  final class MemorySegmentReader extends Reader {
     // TODO mark
     // TODO transferTo
 
@@ -147,7 +166,7 @@ final class Latin1MemorySegmentReadingLine implements ReadingLine {
 
     private int position;
 
-    SegmentReader() {
+    MemorySegmentReader() {
       this.position = 0;
       this.closed = false;
     }

@@ -2,16 +2,18 @@ package com.github.marschall.fixedlenghtfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
@@ -68,17 +70,20 @@ class FixedLengthFileParserTests {
         })
         .build();
 
-//    RecordDefinition headerDefinition = new FixedLengthRecordDefinition("H", 2);
-//    RecordDefinition recordDefintion = new SegmentedRecordDefinition("R", 10,
-//            List.of(
-//                    new SegmentDefinition(7, 1),
-//                    new SegmentDefinition(8, 1),
-//                    new SegmentDefinition(9, 1)));
-//    RecordDefinition footerDefinition = new FixedLengthRecordDefinition("F", 2);
-//    FileDefinition fileDefinition = new FileDefinition(List.of(headerDefinition, recordDefintion, footerDefinition));
-    assertEquals(2, fileDefinition.getRecordDefinition("H").getMaxiumLength());
-    assertEquals(13, fileDefinition.getRecordDefinition("R").getMaxiumLength());
-    assertEquals(2, fileDefinition.getRecordDefinition("F").getMaxiumLength());
+    RecordDefinition headerDefinition = fileDefinition.getRecordDefinition("H");
+    BoundStringField headerType = headerDefinition.bindStringField(TYPE);
+    assertEquals(2, headerDefinition.getMaxiumLength());
+    
+    RecordDefinition recordDefinition = fileDefinition.getRecordDefinition("R");
+    BoundStringField recordTypeField = recordDefinition.bindStringField(TYPE);
+    BoundSegmentIndicatorField indicator1 = recordDefinition.bindSegmentIndicatorField(S1);
+    BoundSegmentIndicatorField indicator2 = recordDefinition.bindSegmentIndicatorField(S2);
+    BoundSegmentIndicatorField indicator3 = recordDefinition.bindSegmentIndicatorField(S3);
+    assertEquals(13, recordDefinition.getMaxiumLength());
+    
+    RecordDefinition footerDefinition = fileDefinition.getRecordDefinition("F");
+    BoundStringField footerType = footerDefinition.bindStringField(TYPE);
+    assertEquals(2, footerDefinition.getMaxiumLength());
 
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
@@ -89,6 +94,37 @@ class FixedLengthFileParserTests {
         assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");
         assertEquals(expectedLenghts.get(recordNumber), line.getLength(), "line length");
         assertNotNull(line, "line");
+        
+        switch (recordType) {
+          case "H" -> {
+            assertEquals("H", line.readTrimmedString(headerType));
+          }
+          case "F" -> {
+            assertEquals("F", line.readTrimmedString(footerType));
+          }
+          case "R" -> {
+            assertEquals("R", line.readTrimmedString(recordTypeField));
+            switch (recordNumber) {
+              case 1 -> {
+                assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator1));
+                assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator2));
+                assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator3));
+              }
+              case 2 -> {
+                assertSame(SegmentIndicator.ABSENT, line.readSegmentIndicator(indicator1));
+                assertSame(SegmentIndicator.ABSENT, line.readSegmentIndicator(indicator2));
+                assertSame(SegmentIndicator.ABSENT, line.readSegmentIndicator(indicator3));
+              }
+              case 3 -> {
+                assertSame(SegmentIndicator.SPACES, line.readSegmentIndicator(indicator1));
+                assertSame(SegmentIndicator.SPACES, line.readSegmentIndicator(indicator2));
+                assertSame(SegmentIndicator.SPACES, line.readSegmentIndicator(indicator3));
+              }
+            }
+          }
+        }
+        
+        
       });
     });
     assertEquals(5, expectedRecordNumber.get(), "encounterd records");
