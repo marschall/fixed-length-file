@@ -24,5 +24,15 @@ final class FieldDefinitions {
   static final UnsignedFieldDefinition FIELD6 = new UnsignedFieldDefinition("FIELD-6", 2);
   
   static final UnsignedFieldDefinition FIELD7 = new UnsignedFieldDefinition("FIELD-7", 2);
+  
+  static final UnsignedFieldDefinition DATE_FIELD = new UnsignedFieldDefinition("DATE-FIELD", 8);
+  
+  static final UnsignedFieldDefinition TIME_FIELD6 = new UnsignedFieldDefinition("TIME-FIELD-6", 6);
+  
+  static final UnsignedFieldDefinition TIME_FIELD8 = new UnsignedFieldDefinition("TIME-FIELD-8", 8);
+  
+  static final UnsignedFieldDefinition AMOUNT_FIELD = new UnsignedFieldDefinition("AMOUNT-FIELD", 12);
+  
+  static final UnsignedFieldDefinition EXPONENT_FIELD = new UnsignedFieldDefinition("EXPONENT-FIELD", 1);
 
 }

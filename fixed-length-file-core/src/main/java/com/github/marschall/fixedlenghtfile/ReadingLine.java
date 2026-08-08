@@ -1,12 +1,20 @@
 package com.github.marschall.fixedlenghtfile;
 
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundBigDecimalField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundLocalDateTimeField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentedField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalDateField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalTimeField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentedField;
 
 public interface ReadingLine {
 
@@ -15,6 +23,16 @@ public interface ReadingLine {
   long readUnsignedLong(BoundLongField field);
 
   String readTrimmedString(BoundStringField field);
+
+  LocalDate readLocalDate(BoundLocalDateField field);
+
+  LocalTime readLocalTime(BoundLocalTimeField field);
+
+  LocalDateTime readLocalDateTime(BoundLocalDateTimeField field);
+  
+  BigDecimal readBigDecimal(BoundBigDecimalField field);
+  
+  // segmented access
 
   int readUnsignedInt(BoundSegmentedField<BoundIntegerField> field);
 
