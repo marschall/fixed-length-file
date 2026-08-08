@@ -18,17 +18,9 @@ public final class FixedLengthFile {
 
   FixedLengthFile(FileDefinition fileDefinition, MemorySegment segment) {
     this.fileDefinition = fileDefinition;
-    this.recordDefinitionMap = this.fileDefinition.getRecordDefinitionMap();
-    this.maximumPrefixLength = this.getMaximumPrefixLength();
+    this.maximumPrefixLength = fileDefinition.getMaximumPrefixLength();
+    this.recordDefinitionMap = fileDefinition.getRecordDefinitionMap();
     this.segment = segment;
-  }
-
-  private int getMaximumPrefixLength() {
-    int maximum = 0;
-    for (String prefix : this.recordDefinitionMap.keySet()) {
-      maximum = Math.max(maximum, prefix.length());
-    }
-    return maximum;
   }
 
   public void parseFile(LineConsumer consumer) {
@@ -73,7 +65,7 @@ public final class FixedLengthFile {
     byte[] characters = this.segment.asSlice(position, this.maximumPrefixLength).toArray(JAVA_BYTE);
     String prefix = new String(characters, ISO_8859_1);
     // first try direct lookup
-    RecordDefinition recordDefinition = this.recordDefinitionMap.get(prefix);
+    RecordDefinition recordDefinition = this.fileDefinition.getRecordDefinition(prefix);
     if (recordDefinition != null) {
       return recordDefinition;
     }

@@ -15,14 +15,24 @@ class Latin1MemorySegmentWritingLineTests {
 
   @Test
   void writeFirstLine() throws IOException {
-    FieldBinder binder = new FieldBinder();
-    BoundStringField field1 = binder.bind(FieldDefinitions.FIELD1);
-    BoundStringField field2 = binder.bind(FieldDefinitions.FIELD2);
-    BoundStringField field3 = binder.bind(FieldDefinitions.FIELD3);
-    BoundIntegerField field6 = binder.bind(FieldDefinitions.FIELD6);
-    BoundIntegerField field7 = binder.bind(FieldDefinitions.FIELD7);
+    FileDefinition fileDefinition = FileDefinition.builder()
+        .defineRecordType("R", binder -> {
+          binder.bind(FieldDefinitions.FIELD1);
+          binder.bind(FieldDefinitions.FIELD2);
+          binder.bind(FieldDefinitions.FIELD3);
+          binder.bind(FieldDefinitions.FIELD6);
+          binder.bind(FieldDefinitions.FIELD7);
+        })
+      .build();
+    
+    var recordDefinition = fileDefinition.getRecordDefinition("R");
+    BoundStringField field1 = recordDefinition.bindStringField(FieldDefinitions.FIELD1);
+    BoundStringField field2 = recordDefinition.bindStringField(FieldDefinitions.FIELD2);
+    BoundStringField field3 = recordDefinition.bindStringField(FieldDefinitions.FIELD3);
+    BoundIntegerField field6 = recordDefinition.bindUnsingedIntegerField(FieldDefinitions.FIELD6);
+    BoundIntegerField field7 = recordDefinition.bindUnsingedIntegerField(FieldDefinitions.FIELD7);
 
-    byte[] target = new byte[binder.getLength()];
+    byte[] target = new byte[recordDefinition.getMaxiumLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
     var line = new Latin1MemorySegmentWritingLine(segment, 0L);
 

@@ -20,6 +20,10 @@ public abstract sealed class FieldDefinition {
     return length;
   }
 
+  String getName() {
+    return this.name;
+  }
+
   @Override
   public boolean equals(Object obj) {
     // name is unique
@@ -49,14 +53,6 @@ public abstract sealed class FieldDefinition {
 
     public StringFieldDefinition(String name, int length) {
       super(name, length);
-    }
-
-  }
-
-  public static final class SegmentFieldDefinition extends FieldDefinition {
-
-    public SegmentFieldDefinition(String name) {
-      super(name, 1);
     }
 
   }

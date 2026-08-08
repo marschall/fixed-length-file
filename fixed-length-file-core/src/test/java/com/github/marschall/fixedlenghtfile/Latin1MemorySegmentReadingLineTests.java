@@ -40,24 +40,23 @@ class Latin1MemorySegmentReadingLineTests {
   
   @Test
   void recordDefinitionLength() {
-    var recordDefinition = this.fileDefinition.getRecordDefinitionMap().get("R");
+    var recordDefinition = this.fileDefinition.getRecordDefinition("R");
     assertNotNull(recordDefinition);
-    assertEquals(33, recordDefinition.getLength());
+    assertEquals(33, recordDefinition.getMaxiumLength());
   }
 
   @Test
   void readLines() throws IOException {
-    
-    Path path = Path.of("src/test/resources/sample.txt");
 
-    FieldBinder binder = new FieldBinder();
-    binder.bind(FieldDefinitions.TYPE);
-    BoundStringField field1 = binder.bind(FieldDefinitions.FIELD1);
-    BoundStringField field2 = binder.bind(FieldDefinitions.FIELD2);
-    BoundStringField field3 = binder.bind(FieldDefinitions.FIELD3);
-    BoundStringField field4 = binder.bind(FieldDefinitions.FIELD4);
-    BoundStringField field5 = binder.bind(FieldDefinitions.FIELD5);
-    BoundIntegerField field6 = binder.bind(FieldDefinitions.FIELD6);
+    var path = Path.of("src/test/resources/sample.txt");
+
+    var recordDefinition = this.fileDefinition.getRecordDefinition("R");
+    BoundStringField field1 = recordDefinition.bindStringField(FieldDefinitions.FIELD1);
+    BoundStringField field2 = recordDefinition.bindStringField(FieldDefinitions.FIELD2);
+    BoundStringField field3 = recordDefinition.bindStringField(FieldDefinitions.FIELD3);
+    BoundStringField field4 = recordDefinition.bindStringField(FieldDefinitions.FIELD4);
+    BoundStringField field5 = recordDefinition.bindStringField(FieldDefinitions.FIELD5);
+    BoundIntegerField field6 = recordDefinition.bindUnsingedIntegerField(FieldDefinitions.FIELD6);
 
     this.parser.parseFile(this.fileDefinition, path, file -> {
       file.parseFile((recordType, recordNumber, line) -> {
@@ -106,7 +105,7 @@ class Latin1MemorySegmentReadingLineTests {
   @Disabled
   @Test
   void objectLayout() throws IOException {
-    Path path = Path.of("src/test/resources/sample.txt");
+    var path = Path.of("src/test/resources/sample.txt");
 
     this.parser.parseFile(this.fileDefinition, path, file -> {
       file.parseFile((_, _, line) -> {

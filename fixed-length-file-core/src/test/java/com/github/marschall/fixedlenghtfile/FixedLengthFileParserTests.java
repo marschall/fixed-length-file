@@ -76,9 +76,9 @@ class FixedLengthFileParserTests {
 //                    new SegmentDefinition(9, 1)));
 //    RecordDefinition footerDefinition = new FixedLengthRecordDefinition("F", 2);
 //    FileDefinition fileDefinition = new FileDefinition(List.of(headerDefinition, recordDefintion, footerDefinition));
-    Map<String,RecordDefinition> recordDefinitionMap = fileDefinition.getRecordDefinitionMap();
-    assertEquals(2, recordDefinitionMap.get("H").getLength());
-    assertEquals(2, recordDefinitionMap.get("F").getLength());
+    assertEquals(2, fileDefinition.getRecordDefinition("H").getMaxiumLength());
+    assertEquals(13, fileDefinition.getRecordDefinition("R").getMaxiumLength());
+    assertEquals(2, fileDefinition.getRecordDefinition("F").getMaxiumLength());
 
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");

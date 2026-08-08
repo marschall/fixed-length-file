@@ -8,16 +8,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundLongField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FileDefinition.FieldAndOffset;
 
 public abstract sealed class RecordDefinition {
 
   private final String type;
-  private final int length;
   private final Map<FieldDefinition, FieldAndOffset> fieldMap;
 
   RecordDefinition(String type, List<FieldAndOffset> records) {
-    this.length = computeLength(records);
     this.type = Objects.requireNonNull(type, "type");
     this.fieldMap = buildFieldMap(records);
   }
@@ -29,12 +33,10 @@ public abstract sealed class RecordDefinition {
     }
     return map;
   }
-  
-  int getLength() {
-    return this.length;
-  }
 
-  private static int computeLength(List<FieldAndOffset> records) {
+  abstract int getMaxiumLength();
+
+  static int computeLength(List<FieldAndOffset> records) {
     int totalLength = 0;
     for (FieldAndOffset record : records) {
       totalLength += record.length();
@@ -45,7 +47,35 @@ public abstract sealed class RecordDefinition {
   String getType() {
     return this.type;
   }
-  
+
+  private FieldAndOffset getRequiredFieldDefinition(FieldDefinition definition) {
+    FieldAndOffset fieldAndOffset = this.fieldMap.get(definition);
+    if (fieldAndOffset == null) {
+      throw new IllegalArgumentException("Field " + definition.getName() + " not present in record: " + this.type);
+    }
+    return fieldAndOffset;
+  }
+
+  BoundIntegerField bindUnsingedIntegerField(UnsignedFieldDefinition definition) {
+    FieldAndOffset fieldAndOffset = this.getRequiredFieldDefinition(definition);
+    return new BoundIntegerField(fieldAndOffset.offset(), definition);
+  }
+
+  BoundLongField bindUnsignedLongField(UnsignedFieldDefinition definition) {
+    FieldAndOffset fieldAndOffset = this.getRequiredFieldDefinition(definition);
+    return new BoundLongField(fieldAndOffset.offset(), definition);
+  }
+
+  BoundStringField bindStringField(StringFieldDefinition definition) {
+    FieldAndOffset fieldAndOffset = this.getRequiredFieldDefinition(definition);
+    return new BoundStringField(fieldAndOffset.offset(), definition);
+  }
+
+  BoundSegmentIndicatorField bindSegmentIndicatorField(StringFieldDefinition definition) {
+    FieldAndOffset fieldAndOffset = this.getRequiredFieldDefinition(definition);
+    return new BoundSegmentIndicatorField(fieldAndOffset.offset(), definition);
+  }
+
   @Override
   public String toString() {
     return "RecordType(" + this.type + ")";
@@ -55,30 +85,56 @@ public abstract sealed class RecordDefinition {
 
   public static final class FixedLengthRecordDefinition extends RecordDefinition {
 
+    private final int length;
+
     FixedLengthRecordDefinition(String type, List<FieldAndOffset> records) {
       super(type, records);
+      this.length = computeLength(records);
+    }
+    
+    @Override
+    int getMaxiumLength() {
+      return this.length;
     }
 
     @Override
     int determineRecordLengt(MemorySegment memorySegment, long lineStart) {
-      return this.getLength();
+      return this.getMaxiumLength();
     }
 
   }
 
   public static final class SegmentedRecordDefinition extends RecordDefinition {
 
+    private final int baseLength;
+    private final int maxiumLength;
+
     private final List<SegmentDefinition> segmentDefinitions;
 
     SegmentedRecordDefinition(String type, List<FieldAndOffset> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
       super(type, fixedRecords);
       this.segmentDefinitions = segmentDefinitions;
+      this.baseLength = computeLength(fixedRecords);
+      this.maxiumLength = computeMaxiumLength(fixedRecords, segmentDefinitions);
+    }
+
+    static int computeMaxiumLength(List<FieldAndOffset> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
+      int maxLength = computeLength(fixedRecords);
+      for (SegmentDefinition segmentDefinition : segmentDefinitions) {
+        maxLength += segmentDefinition.getLength();
+      }
+      return maxLength;
+    }
+    
+    @Override
+    int getMaxiumLength() {
+      return this.maxiumLength;
     }
 
     @Override
     int determineRecordLengt(MemorySegment memorySegment, long lineStart) {
       // TODO Move to fixed length file?
-      int recordLength = this.getLength();
+      int recordLength = this.baseLength;
       for (SegmentDefinition segmentDefinition : this.segmentDefinitions) {
         if (this.isSegmentPresentInLine(memorySegment, lineStart, segmentDefinition)) {
           recordLength += segmentDefinition.getLength();
@@ -101,31 +157,28 @@ public abstract sealed class RecordDefinition {
 
   static final class SegmentDefinition {
 
-    private final int offset;
+    private final StringFieldDefinition segmentIndicatorField;
+
+    private final List<FieldAndOffset> fields;
+
     private final int length;
 
-    SegmentDefinition(int offset, int length) {
-      if (offset < 0) {
-        throw new IllegalArgumentException();
-      }
-      if (length < 0) {
-        throw new IllegalArgumentException();
-      }
-      this.offset = offset;
-      this.length = length;
-    }
+    private final int segmentIndex;
 
-    int getOffset() {
-      return this.offset;
+    SegmentDefinition(int segmentIndex, StringFieldDefinition segmentIndicatorField, List<FieldAndOffset> fields) {
+      this.segmentIndex = segmentIndex;
+      this.segmentIndicatorField = Objects.requireNonNull(segmentIndicatorField, "segment indicator field");
+      this.fields = fields;
+      this.length = computeLength(fields);
     }
 
     int getLength() {
       return this.length;
     }
-    
+
     @Override
     public String toString() {
-      return "Segement(offset=" + this.offset + ", length" + this.length + ")";
+      return "Segement(name=" + this.segmentIndicatorField.getName() + ", length" + this.length + ")";
     }
 
   }

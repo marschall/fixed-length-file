@@ -15,19 +15,38 @@ import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefi
 public final class FileDefinition {
 
   private final List<RecordDefinition> recordDefinitions;
+  private final Map<String, RecordDefinition> recordDefinitionMap;
 
   public FileDefinition(List<RecordDefinition> recordDefinitions) {
+    Objects.requireNonNull(recordDefinitions, "recordDefinitions");
     this.recordDefinitions = recordDefinitions;
+    this.recordDefinitionMap = buildRecordDefinitionMap(recordDefinitions);
   }
 
-  public Map<String, RecordDefinition> getRecordDefinitionMap() {
-    Map<String, RecordDefinition> map = HashMap.newHashMap(this.recordDefinitions.size());
-    for (RecordDefinition recordDefinition : this.recordDefinitions) {
+  private static Map<String, RecordDefinition> buildRecordDefinitionMap(List<RecordDefinition> recordDefinitions) {
+    Map<String, RecordDefinition> map = HashMap.newHashMap(recordDefinitions.size());
+    for (RecordDefinition recordDefinition : recordDefinitions) {
       map.put(recordDefinition.getType(), recordDefinition);
     }
     return map;
   }
   
+  Map<String, RecordDefinition> getRecordDefinitionMap() {
+    return this.recordDefinitionMap;
+  }
+  
+  public RecordDefinition getRecordDefinition(String recordType) {
+    return this.recordDefinitionMap.get(recordType);
+  }
+
+  int getMaximumPrefixLength() {
+    int maximum = 0;
+    for (String prefix : this.recordDefinitionMap.keySet()) {
+      maximum = Math.max(maximum, prefix.length());
+    }
+    return maximum;
+  }
+
   public static FileDefinitionBuilder builder() {
     return new InternalFileDefinitionBuilder();
   }
@@ -99,7 +118,7 @@ public final class FileDefinition {
     @Override
     public void defineSegment(StringFieldDefinition segmentIndicatorField, Consumer<SegmentFieldBinder> binderConsumer) {
       this.bind(segmentIndicatorField);
-      InternalSegmentFieldBinder segmentFieldBinder = new InternalSegmentFieldBinder();
+      InternalSegmentFieldBinder segmentFieldBinder = new InternalSegmentFieldBinder(this.segments.size(), segmentIndicatorField);
       binderConsumer.accept(segmentFieldBinder);
       this.segments.add(segmentFieldBinder.build());
     }
@@ -113,14 +132,21 @@ public final class FileDefinition {
     }
     
   }
-  
+
   static final class InternalSegmentFieldBinder extends InternalLineFieldBinder implements SegmentFieldBinder {
-    
-    SegmentDefinition build() {
-      // FIXME
-      return null;
+
+    private final StringFieldDefinition segmentIndicatorField;
+    private final int segmentIndex;
+
+    InternalSegmentFieldBinder(int segmentIndex, StringFieldDefinition segmentIndicatorField) {
+      this.segmentIndex = segmentIndex;
+      this.segmentIndicatorField = segmentIndicatorField;
     }
-    
+
+    SegmentDefinition build() {
+      return new SegmentDefinition(this.segmentIndex, this.segmentIndicatorField, this.fields);
+    }
+
   }
 
 }
