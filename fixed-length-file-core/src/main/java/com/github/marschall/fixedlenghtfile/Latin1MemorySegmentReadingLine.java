@@ -82,28 +82,18 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
     return LocalDateTime.of(localDate, localTime);
   }
 
-  private char readCharAt(long index) {
+  private char readCharAt(int index) {
     byte b = this.memorySegment.getAtIndex(JAVA_BYTE, index);
     return (char) Byte.toUnsignedInt(b);
   }
 
-  private static RuntimeException digitExpectedAt(long i, char c) {
-    return new FileFormatException("expected digit at index: " + i + " but got: " + c);
+  private RuntimeException digitExpectedAt(int i, char c) {
+    return new FileFormatException("expected digit at index: " + (this.memorySegment.address() + i) + " but got: " + c);
   }
 
   @Override
   public long readUnsignedLong(BoundLongField field) {
-    int offset = field.getOffset();
-    int length = field.getLength();
-    long value = 0L;
-    for (int i = 0; i < length; i++) {
-      char c = readCharAt(offset + i);
-      if (c < '0' || c > '9') {
-        throw digitExpectedAt(offset + i, c);
-      }
-      value = value * 10L + (c - '0');
-    }
-    return value;
+    return readUnsignedLong(0, field);
   }
 
   protected long readUnsignedLong(int baseOffset, BoundLongField field) {
@@ -135,9 +125,10 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
   }
   
   protected String readTrimmedString(int baseOffset, BoundStringField field) {
-    int offset = field.getOffset();
+    int offset = baseOffset + field.getOffset();
     int length = field.getLength();
-    long start = offset + length - 1L;
+    // initialize with end in case string is all spaces
+    int start = offset + length;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
       if (c != ' ') {
@@ -145,12 +136,13 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
         break;
       }
     }
-    if (start == offset + length - 1L) {
+    if (start == offset + length) {
       // avoid allocation for the common case of an empty string
       return "";
     }
-    long end = offset + length - 1L;
-    for (long l = end; l >= start; l--) {
+    // search last non space
+    int end = offset + length - 1;
+    for (int l = end; l >= start; l--) {
       char c = readCharAt(l);
       if (c != ' ') {
         end = l;

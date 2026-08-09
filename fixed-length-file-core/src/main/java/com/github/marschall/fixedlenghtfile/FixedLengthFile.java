@@ -41,10 +41,14 @@ public final class FixedLengthFile {
       int recordLength = determineRecordLength(position, recordDefinition);
       MemorySegment lineSegment = this.segment.asSlice(position, recordLength);
       Latin1MemorySegmentReadingLine line = switch (recordDefinition) {
-        case FixedLengthRecordDefinition _ -> new FixedLatin1MemorySegmentReadingLine(lineSegment);
-        // TODO formatting
-        // TODO read only once
-        case SegmentedRecordDefinition segmented -> new SegmentedLatin1MemorySegmentReadingLine(lineSegment, readSegmentOffsets(position, segmented));
+        case FixedLengthRecordDefinition _ ->  {
+          yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
+        }
+        case SegmentedRecordDefinition segmented -> {
+          // TODO read only once
+          SegmentOffsets segmentOffsets = readSegmentOffsets(position, segmented);
+          yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, segmentOffsets);
+        }
       };
       consumer.accept(recordDefinition.getType(), recordNumber, line);
       recordNumber += 1;

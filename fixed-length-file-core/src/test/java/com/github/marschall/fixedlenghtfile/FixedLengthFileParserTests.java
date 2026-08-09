@@ -72,6 +72,7 @@ class FixedLengthFileParserTests {
 
     RecordDefinition headerDefinition = fileDefinition.getRecordDefinition("H");
     BoundStringField headerType = headerDefinition.bindStringField(TYPE);
+    BoundStringField headerStringField = headerDefinition.bindStringField(FIELD1);
     assertEquals(2, headerDefinition.getMaximumLength());
     
     RecordDefinition recordDefinition = fileDefinition.getRecordDefinition("R");
@@ -83,6 +84,7 @@ class FixedLengthFileParserTests {
     
     RecordDefinition footerDefinition = fileDefinition.getRecordDefinition("F");
     BoundStringField footerType = footerDefinition.bindStringField(TYPE);
+    BoundStringField footerStringField = footerDefinition.bindStringField(FIELD1);
     assertEquals(2, footerDefinition.getMaximumLength());
 
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
@@ -94,16 +96,18 @@ class FixedLengthFileParserTests {
         assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");
         assertEquals(expectedLenghts.get(recordNumber), line.getLength(), "line length");
         assertNotNull(line, "line");
-        
+
         switch (recordType) {
           case "H" -> {
-            assertEquals("H", line.readTrimmedString(headerType));
+            assertEquals("H", line.readTrimmedString(headerType), "header type");
+            assertEquals("1", line.readTrimmedString(headerStringField), "header field 1");
           }
           case "F" -> {
-            assertEquals("F", line.readTrimmedString(footerType));
+            assertEquals("F", line.readTrimmedString(footerType), "footer type");
+            assertEquals("2", line.readTrimmedString(footerStringField), "footer field 1");
           }
           case "R" -> {
-            assertEquals("R", line.readTrimmedString(recordTypeField));
+            assertEquals("R", line.readTrimmedString(recordTypeField), "record type");
             switch (recordNumber) {
               case 1 -> {
                 assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator1));
@@ -123,8 +127,6 @@ class FixedLengthFileParserTests {
             }
           }
         }
-        
-        
       });
     });
     assertEquals(5, expectedRecordNumber.get(), "encounterd records");
