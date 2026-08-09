@@ -51,7 +51,7 @@ class Latin1MemorySegmentReadingLineTests {
   void recordDefinitionLength() {
     var recordDefinition = this.fileDefinition.getRecordDefinition("R");
     assertNotNull(recordDefinition);
-    assertEquals(33, recordDefinition.getMaxiumLength());
+    assertEquals(33, recordDefinition.getMaximumLength());
   }
 
   @Test

@@ -32,7 +32,7 @@ class Latin1MemorySegmentWritingLineTests {
     BoundIntegerField field6 = recordDefinition.bindUnsingedIntegerField(FieldDefinitions.FIELD6);
     BoundIntegerField field7 = recordDefinition.bindUnsingedIntegerField(FieldDefinitions.FIELD7);
 
-    byte[] target = new byte[recordDefinition.getMaxiumLength()];
+    byte[] target = new byte[recordDefinition.getMaximumLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
     var line = new Latin1MemorySegmentWritingLine(segment, 0L);
 

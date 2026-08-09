@@ -5,10 +5,9 @@ import java.util.Objects;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalDateField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalTimeField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
 
 public abstract sealed class BoundField {
 
@@ -89,6 +88,11 @@ public abstract sealed class BoundField {
         super(offset, definition);
       }
 
+      @Override
+      int getLength() {
+        return 1;
+      }
+
     }
 
   }
@@ -138,10 +142,13 @@ public abstract sealed class BoundField {
   public static final class BoundSegmentedField<F extends OffsetField<?>> extends BoundField {
 
     private final F delegate;
-    private final BoundSegmentIndicatorField segmentIndicator;
+    private final byte segmentIndex;
 
-    BoundSegmentedField(BoundSegmentIndicatorField segmentIndicator, F delegate) {
-      this.segmentIndicator = Objects.requireNonNull(segmentIndicator, "segmentIndicator");
+    BoundSegmentedField(int segmentIndex, F delegate) {
+      if (segmentIndex > Byte.MAX_VALUE) {
+        throw new IllegalArgumentException("index too large");
+      }
+      this.segmentIndex = (byte) segmentIndex;
       this.delegate = Objects.requireNonNull(delegate, "delegate");
     }
 
@@ -149,13 +156,13 @@ public abstract sealed class BoundField {
       return this.delegate;
     }
 
-    BoundSegmentIndicatorField getSegmentIndicator() {
-      return this.segmentIndicator;
+    int getSegmentIndex() {
+      return this.segmentIndex;
     }
 
     @Override
     public String toString() {
-      return this.delegate + " in: " + this.segmentIndicator;
+      return this.delegate + " in segment: " + this.segmentIndex;
     }
 
   }

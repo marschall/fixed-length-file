@@ -72,18 +72,18 @@ class FixedLengthFileParserTests {
 
     RecordDefinition headerDefinition = fileDefinition.getRecordDefinition("H");
     BoundStringField headerType = headerDefinition.bindStringField(TYPE);
-    assertEquals(2, headerDefinition.getMaxiumLength());
+    assertEquals(2, headerDefinition.getMaximumLength());
     
     RecordDefinition recordDefinition = fileDefinition.getRecordDefinition("R");
     BoundStringField recordTypeField = recordDefinition.bindStringField(TYPE);
     BoundSegmentIndicatorField indicator1 = recordDefinition.bindSegmentIndicatorField(S1);
     BoundSegmentIndicatorField indicator2 = recordDefinition.bindSegmentIndicatorField(S2);
     BoundSegmentIndicatorField indicator3 = recordDefinition.bindSegmentIndicatorField(S3);
-    assertEquals(13, recordDefinition.getMaxiumLength());
+    assertEquals(13, recordDefinition.getMaximumLength());
     
     RecordDefinition footerDefinition = fileDefinition.getRecordDefinition("F");
     BoundStringField footerType = footerDefinition.bindStringField(TYPE);
-    assertEquals(2, footerDefinition.getMaxiumLength());
+    assertEquals(2, footerDefinition.getMaximumLength());
 
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");

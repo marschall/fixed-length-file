@@ -1,8 +1,5 @@
 package com.github.marschall.fixedlenghtfile;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-
-import java.lang.foreign.MemorySegment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +34,10 @@ public abstract sealed class RecordDefinition {
     }
     return map;
   }
+  
+  abstract int getBaseLength();
 
-  abstract int getMaxiumLength();
+  abstract int getMaximumLength();
 
   static int computeLength(List<FieldAndOffset> records) {
     int totalLength = 0;
@@ -116,8 +115,6 @@ public abstract sealed class RecordDefinition {
     return "RecordType(" + this.type + ")";
   }
 
-  abstract int determineRecordLength(MemorySegment memorySegment, long lineStart);
-
   public static final class FixedLengthRecordDefinition extends RecordDefinition {
 
     private final int length;
@@ -128,13 +125,13 @@ public abstract sealed class RecordDefinition {
     }
     
     @Override
-    int getMaxiumLength() {
+    int getBaseLength() {
       return this.length;
     }
-
+    
     @Override
-    int determineRecordLength(MemorySegment memorySegment, long lineStart) {
-      return this.getMaxiumLength();
+    int getMaximumLength() {
+      return this.length;
     }
 
   }
@@ -160,32 +157,19 @@ public abstract sealed class RecordDefinition {
       }
       return maxLength;
     }
-    
+
     @Override
-    int getMaxiumLength() {
+    int getBaseLength() {
+      return this.baseLength;
+    }
+
+    @Override
+    int getMaximumLength() {
       return this.maxiumLength;
     }
 
-    @Override
-    int determineRecordLength(MemorySegment memorySegment, long lineStart) {
-      // TODO Move to fixed length file?
-      int recordLength = this.baseLength;
-      for (SegmentDefinition segmentDefinition : this.segmentDefinitions) {
-        if (this.isSegmentPresentInLine(memorySegment, lineStart, segmentDefinition)) {
-          recordLength += segmentDefinition.getLength();
-        }
-      }
-      return recordLength;
-    }
-
-    private boolean isSegmentPresentInLine(MemorySegment memorySegment, long lineStart, SegmentDefinition segmentDefinition) {
-      byte b = memorySegment.getAtIndex(JAVA_BYTE, lineStart + segmentDefinition.offset);
-      char c = (char) Byte.toUnsignedInt(b);
-      return switch (c) {
-        case SegmentIndicator.PRESENT_VALUE, SegmentIndicator.SPACES_VALUE -> true;
-        case SegmentIndicator.ABSENT_VALUE -> false;
-        default -> throw new FileFormatException("Unexpected segment indicator: " + c);
-      };
+    List<SegmentDefinition> getSegmentDefinitions() {
+      return this.segmentDefinitions;
     }
 
   }
@@ -209,6 +193,10 @@ public abstract sealed class RecordDefinition {
 
     int getLength() {
       return this.length;
+    }
+    
+    StringFieldDefinition getSegmentIndicatorField() {
+      return this.segmentIndicatorField;
     }
 
     @Override
