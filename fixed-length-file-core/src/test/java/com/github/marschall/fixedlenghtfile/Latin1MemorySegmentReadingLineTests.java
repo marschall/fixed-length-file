@@ -127,7 +127,7 @@ class Latin1MemorySegmentReadingLineTests {
         })
         .build();
 
-    var recordDefinition = this.fileDefinition.getRecordDefinition("R");
+    var recordDefinition = highLevelDefinition.getRecordDefinition("R");
     BoundLocalDateField dateField = recordDefinition.bindLocalDateField(FieldDefinitions.DATE_FIELD);
     BoundLocalTimeField timeField6 = recordDefinition.bindLocalTimeField(FieldDefinitions.TIME_FIELD6);
     BoundLocalTimeField timeField8 = recordDefinition.bindLocalTimeField(FieldDefinitions.TIME_FIELD8);
@@ -142,10 +142,10 @@ class Latin1MemorySegmentReadingLineTests {
 
         assertEquals(LocalDate.of(2026, 8, 9), line.readLocalDate(dateField));
         assertEquals(LocalTime.of(20, 52, 13), line.readLocalTime(timeField6));
-        assertEquals(LocalTime.of(20, 52, 14, 560), line.readLocalTime(timeField8));
+        assertEquals(LocalTime.of(20, 52, 14, 560_000_000), line.readLocalTime(timeField8));
 
         assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13)), line.readLocalDateTime(localDateTimeField6));
-        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560)), line.readLocalDateTime(localDateTimeField8));
+        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000)), line.readLocalDateTime(localDateTimeField8));
 
         assertThat(line.readBigDecimal(bigDecimalField)).isEqualByComparingTo(new BigDecimal("1234567890.12"));
       });

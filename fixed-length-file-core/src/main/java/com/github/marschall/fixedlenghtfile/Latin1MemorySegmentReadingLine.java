@@ -6,10 +6,18 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.foreign.MemorySegment;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
+import com.github.marschall.fixedlenghtfile.BoundField.BoundBigDecimalField;
+import com.github.marschall.fixedlenghtfile.BoundField.BoundLocalDateTimeField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalDateField;
+import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalTimeField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
 import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
@@ -30,7 +38,10 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
 
   protected int readUnsignedInt(int baseOffset, BoundIntegerField field) {
     int offset = baseOffset + field.getOffset();
-    int length = field.getLength();
+    return readUnsignedInt(offset, field.getLength());
+  }
+  
+  private int readUnsignedInt(int offset, int length) {
     int value = 0;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -40,6 +51,35 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
       value = value * 10 + (c - '0');
     }
     return value;
+  }
+
+  @Override
+  public LocalDate readLocalDate(BoundLocalDateField field) {
+    int yyyyMMdd = readUnsignedInt(field.getOffset(), field.getLength());
+    int dayOfMonth = yyyyMMdd % 100;
+    int month = (yyyyMMdd / 100) % 100;
+    int year = yyyyMMdd / 100_00;
+    return LocalDate.of(year, month, dayOfMonth);
+  }
+  
+  @Override
+  public LocalTime readLocalTime(BoundLocalTimeField field) {
+    int length = field.getLength();
+    int value = readUnsignedInt(field.getOffset(), length);
+    // length 6: hhmmss 8: hhmmsscc
+    int hhmmsscc = length == 6 ? value * 100 : value;
+    int nanoOfSecond = (hhmmsscc % 100) * 10_000_000; // xx -> xx0_000_000
+    int second = (hhmmsscc / 100) % 100;
+    int minute = (hhmmsscc / 100_00) % 100;
+    int hour = hhmmsscc / 100_00_00;
+    return LocalTime.of(hour, minute, second, nanoOfSecond);
+  }
+  
+  @Override
+  public LocalDateTime readLocalDateTime(BoundLocalDateTimeField field) {
+    var localDate = readLocalDate(field.getLocalDateField());
+    var localTime = readLocalTime(field.getLocalTimeField());
+    return LocalDateTime.of(localDate, localTime);
   }
 
   private char readCharAt(long index) {
@@ -67,8 +107,10 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
   }
 
   protected long readUnsignedLong(int baseOffset, BoundLongField field) {
-    int offset = baseOffset + field.getOffset();
-    int length = field.getLength();
+    return readUnsignedLong(baseOffset + field.getOffset(), field.getLength());
+  }
+  
+  private long readUnsignedLong(int offset, int length) {
     long value = 0L;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -78,6 +120,13 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
       value = value * 10L + (c - '0');
     }
     return value;
+  }
+
+  @Override
+  public BigDecimal readBigDecimal(BoundBigDecimalField field) {
+    long amount = readUnsignedLong(field.getAmountField());
+    int exponent = readUnsignedInt(field.getExponentField());
+    return BigDecimal.valueOf(amount, exponent);
   }
 
   @Override

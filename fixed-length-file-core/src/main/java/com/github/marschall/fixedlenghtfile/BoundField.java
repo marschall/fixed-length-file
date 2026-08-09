@@ -38,8 +38,6 @@ public abstract sealed class BoundField {
 
     public static final class BoundStringField extends OffsetField<StringFieldDefinition> {
       // TODO single char
-      // TODO date
-      // TODO time
 
       BoundStringField(short offset, StringFieldDefinition definition) {
         super(offset, definition);
