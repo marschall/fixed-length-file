@@ -11,9 +11,9 @@ class InterfaceVersionTests {
 
   @Test
   void ignoreZeros() {
-    InterfaceVersion oneDotZero = new InterfaceVersion("1.0");
-    InterfaceVersion oneDotZeroDotZero = new InterfaceVersion("1.0.0");
-    InterfaceVersion oneDotZeroZero = new InterfaceVersion("1.00");
+    InterfaceVersion oneDotZero = InterfaceVersion.parse("1.0");
+    InterfaceVersion oneDotZeroDotZero = InterfaceVersion.parse("1.0.0");
+    InterfaceVersion oneDotZeroZero = InterfaceVersion.parse("1.00");
 
     assertThat(oneDotZero).isEqualByComparingTo(oneDotZeroDotZero);
     assertThat(oneDotZero).isEqualByComparingTo(oneDotZeroZero);
@@ -27,9 +27,9 @@ class InterfaceVersionTests {
 
   @Test
   void preserveZeros() {
-    InterfaceVersion oneDotZero = new InterfaceVersion("1.0");
-    InterfaceVersion oneDotZeroDotZero = new InterfaceVersion("1.0.0");
-    InterfaceVersion oneDotZeroZero = new InterfaceVersion("1.00");
+    InterfaceVersion oneDotZero = InterfaceVersion.parse("1.0");
+    InterfaceVersion oneDotZeroDotZero = InterfaceVersion.parse("1.0.0");
+    InterfaceVersion oneDotZeroZero = InterfaceVersion.parse("1.00");
 
     assertThat(oneDotZero).hasToString("1.0.0");
     assertThat(oneDotZeroDotZero).hasToString("1.0.0");
@@ -41,7 +41,7 @@ class InterfaceVersionTests {
     List<String> unparsed = List.of("0.9", "0.9.1", "1.0", "1.0.1");
 
     var versionsOrdered = unparsed.stream()
-                                  .map(InterfaceVersion::new)
+                                  .map(InterfaceVersion::parse)
                                   .toList();
 
     for (int i = 0; i < versionsOrdered.size(); i++) {
@@ -67,7 +67,7 @@ class InterfaceVersionTests {
 
     //formatter:off
     var versionsOrdered = unparsed.stream()
-                                   .map(InterfaceVersion::new)
+                                   .map(InterfaceVersion::parse)
                                    .toList();
     //formatter:on
 
@@ -90,8 +90,8 @@ class InterfaceVersionTests {
 
   @Test
   void patchVersions() {
-    InterfaceVersion four = new InterfaceVersion("4.0.0");
-    InterfaceVersion fourDotOne = new InterfaceVersion("4.0.1");
+    InterfaceVersion four = InterfaceVersion.parse("4.0.0");
+    InterfaceVersion fourDotOne = InterfaceVersion.parse("4.0.1");
 
     assertThat(four).isLessThan(fourDotOne);
     assertThat(fourDotOne).isGreaterThan(four);
@@ -99,33 +99,49 @@ class InterfaceVersionTests {
 
   @Test
   void testHashCode() {
-    InterfaceVersion version = new InterfaceVersion("127.128.127");
+    InterfaceVersion version = InterfaceVersion.parse("127.128.127");
 
     assertEquals(147997, version.hashCode(), "hashCode");
   }
-  
+
   @Test
   void workingVersion() {
-    InterfaceVersion working2 = new InterfaceVersion("2.28.0.w.2");
+    InterfaceVersion working2 = InterfaceVersion.parse("2.28.0.w.2");
     assertThat(working2).hasToString("2.28.0");
   }
 
   @Test
   void draftVersion() {
-    InterfaceVersion darft3 = new InterfaceVersion("2.40.0.d.3");
+    InterfaceVersion darft3 = InterfaceVersion.parse("2.40.0.d.3");
     assertThat(darft3).hasToString("2.40.0");
   }
 
   @Test
   void finalVersion() {
-    InterfaceVersion final2 = new InterfaceVersion("2.36.0.f.2");
+    InterfaceVersion final2 = InterfaceVersion.parse("2.36.0.f.2");
     assertThat(final2).hasToString("2.36.0");
   }
-  
+
   @Test
   void finalb() {
-    InterfaceVersion finalB = new InterfaceVersion("2.22.0 final b");
+    InterfaceVersion finalB = InterfaceVersion.parse("2.22.0 final b");
     assertThat(finalB).hasToString("2.22.0");
+  }
+
+  @Test
+  void revisionOrdering() {
+    InterfaceVersion workingVersion = InterfaceVersion.parse("2.28.0.w.3");
+    InterfaceVersion draftVersion = InterfaceVersion.parse("2.28.0.d.2");
+    InterfaceVersion finalVersion = InterfaceVersion.parse("2.28.0.f.1");
+
+    assertThat(workingVersion).isLessThan(draftVersion);
+    assertThat(workingVersion).isLessThan(finalVersion);
+
+    assertThat(draftVersion).isGreaterThan(workingVersion);
+    assertThat(draftVersion).isLessThan(finalVersion);
+
+    assertThat(finalVersion).isGreaterThan(draftVersion);
+    assertThat(finalVersion).isGreaterThan(workingVersion);
   }
 
 }

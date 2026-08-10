@@ -3,13 +3,60 @@ package com.github.marschall.fixedlenghtfile.configuration.parser;
  * A version made up of up to 3 integer components separated by {@code '.'}
  * and an optional revision preceeded by {@code '.'},.
  */
-final class InterfaceVersion implements Comparable<InterfaceVersion> {
+abstract sealed class InterfaceVersion implements Comparable<InterfaceVersion> {
+  
+  static final class WorkingVersion extends InterfaceVersion {
+
+    WorkingVersion(byte major, byte minor, byte micro) {
+      super(major, minor, micro);
+    }
+
+    @Override
+    int getMaturityIndicator() {
+      return 0;
+    }
+
+  }
+
+  static final class DraftVersion extends InterfaceVersion {
+
+    DraftVersion(byte major, byte minor, byte micro) {
+      super(major, minor, micro);
+    }
+
+    @Override
+    int getMaturityIndicator() {
+      return 1;
+    }
+
+  }
+
+  static final class FinalVersion extends InterfaceVersion {
+
+    FinalVersion(byte major, byte minor, byte micro) {
+      super(major, minor, micro);
+    }
+
+    @Override
+    int getMaturityIndicator() {
+      return 2;
+    }
+
+  }
 
   private static final int MAX_VALUE = Byte.toUnsignedInt((byte) -1);
 
   private final byte major;
   private final byte minor;
   private final byte micro;
+
+  protected InterfaceVersion(byte major, byte minor, byte micro) {
+    this.major = major;
+    this.minor = minor;
+    this.micro = micro;
+  }
+
+
 
   /**
    * Constructs a new {@link InterfaceVersion}.
@@ -18,26 +65,40 @@ final class InterfaceVersion implements Comparable<InterfaceVersion> {
    *                and an optional revision preceeded by {@code '.'},
    *                not {@code null}
    */
-  InterfaceVersion(String version) {
+  static InterfaceVersion parse(String version) {
+    byte major;
+    byte minor;
+    byte micro;
+
     int end = version.indexOf('.');
     if (end == -1) {
-      this.major = parseByte(version, 0, version.length());
-      this.minor = 0;
-      this.micro = 0;
+      major = parseByte(version, 0, version.length());
+      minor = 0;
+      micro = 0;
     } else {
-      this.major = parseByte(version, 0, end);
+      major = parseByte(version, 0, end);
       int start = end + 1;
       end = version.indexOf('.', start);
       if (end == -1) {
-        this.minor = parseByte(version, start, version.length());
-        this.micro = 0;
+        minor = parseByte(version, start, version.length());
+        micro = 0;
       } else {
-        this.minor = parseByte(version, start, end);
+        minor = parseByte(version, start, end);
         start = end + 1;
         end = findMicroEnd(version, start);
-        this.micro = parseByte(version, start, end);
+        micro = parseByte(version, start, end);
       }
     }
+    if (version.contains(".w.")) {
+      return new WorkingVersion(major, minor, micro);
+    }
+    if (version.contains(".d.")) {
+      return new DraftVersion(major, minor, micro);
+    }
+    if (version.contains(".f.") || version.contains(" final ")) {
+      return new FinalVersion(major, minor, micro);
+    }
+    return new FinalVersion(major, minor, micro);
   }
   
   private static int findMicroEnd(String version, int start) {
@@ -79,8 +140,14 @@ final class InterfaceVersion implements Comparable<InterfaceVersion> {
     if (result != 0) {
       return result;
     }
-    return Byte.compareUnsigned(this.micro, o.micro);
+    result = Byte.compareUnsigned(this.micro, o.micro);
+    if (result != 0) {
+      return result;
+    }
+    return Integer.compare(this.getMaturityIndicator(), o.getMaturityIndicator());
   }
+  
+  abstract int getMaturityIndicator();
 
   @Override
   public boolean equals(Object obj) {
