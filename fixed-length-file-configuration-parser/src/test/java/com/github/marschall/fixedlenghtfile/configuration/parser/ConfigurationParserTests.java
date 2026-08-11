@@ -6,13 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -34,7 +30,7 @@ class ConfigurationParserTests {
 
   @Test
   void parseReference() throws Exception {
-    Path referenceFile = findFileIn(Paths.get("src/test/resources/reference"), "xml");
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "xml");
     assertNotNull(referenceFile);
     List<RecordDefinition> recordDefinitions = this.parser.parse(referenceFile, Set.of("HD", "KT", "TR"));
     assertThat(recordDefinitions).hasSize(3);
@@ -63,15 +59,6 @@ class ConfigurationParserTests {
     assertEquals("TR", tr.getName());
     assertThat(tr.hasSegments()).isFalse();
     assertEquals(155, tr.getLengthOfFields());
-  }
-
-  private static Path findFileIn(Path basePath, String exentsion) throws IOException {
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(basePath, "*." + exentsion)) {
-      for (Path path : directoryStream) {
-        return path;
-      }
-    }
-    throw new NoSuchElementException("no file with extension: " + exentsion + " found in: " + basePath);
   }
 
   @Test
