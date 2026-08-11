@@ -47,8 +47,7 @@ class ConfigurationParserTests {
     RecordDefinition kt = recordDefinitions.get(1);
     assertEquals("KT", kt.getName());
     assertThat(kt.hasSegments()).isTrue();
-    // FIXME
-    assertEquals(2866, kt.getLengthOfFields());
+    assertEquals(47 + 109 + 741 + 14 + 296 + 35 + 248 + 187 + 526 + 116 + 184 + 355 + 8, kt.getLengthOfFields());
     List<SegmentDefinition> segments = kt.getSegments();
     assertThat(segments).hasSize(8);
     assertEquals(70, segments.getFirst().getLengthOfFields());

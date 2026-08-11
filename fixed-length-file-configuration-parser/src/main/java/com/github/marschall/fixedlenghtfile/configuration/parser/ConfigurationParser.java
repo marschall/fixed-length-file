@@ -79,7 +79,13 @@ public class ConfigurationParser {
           String id = this.idText.evaluateExpression(field, String.class);
           String length = this.lengthText.evaluateExpression(field, String.class);
           DataType dataType = mapDataType(field);
-          currentFields.add(new Field(id, Integer.parseInt(length), dataType));
+          Field newField = new Field(id, Integer.parseInt(length), dataType);
+          if (!currentFields.isEmpty() && currentFields.getLast().id().equals(id)) {
+            // multiple final versions, overwrite the previous one
+            currentFields.set(currentFields.size() - 1, newField);
+          } else {
+            currentFields.add(newField);
+          }
         }
       }
       isFirstSegment = false;
@@ -107,16 +113,11 @@ public class ConfigurationParser {
   private boolean isInCurrentVersion(Node field) {
     // TODO handle multiple finals
     InterfaceVersion validToVersion = getVersionAttributeValue(field, "validToVersion");
-    // TODO check
     if (validToVersion != null && validToVersion.compareTo(this.currentVersion) <= 0) {
       return false;
     }
-    // TODO check
     InterfaceVersion validFromVersion = getVersionAttributeValue(field, "validFromVersion");
-    if (validFromVersion != null && validFromVersion.compareTo(this.currentVersion) >= 0) {
-      return false;
-    }
-    return true;
+    return validFromVersion == null || validFromVersion.compareTo(this.currentVersion) <= 0;
   }
 
   private InterfaceVersion getVersionAttributeValue(Node node, String attributeValue) {
