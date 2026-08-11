@@ -35,7 +35,7 @@ public class ConfigurationGenerator {
     JavaFile javaFile = JavaFile.builder(packageName, constantContainer)
         .build();
 
-    javaFile.writeToPath(outputDirectory.resolve(className + ".java"));
+    javaFile.writeToPath(outputDirectory);
   }
 
   public static void main(String[] args) {
