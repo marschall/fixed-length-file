@@ -2,10 +2,8 @@ package com.github.marschall.fixedlenghtfile;
 
 import java.lang.foreign.MemorySegment;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentedField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
 final class FixedLatin1MemorySegmentReadingLine extends Latin1MemorySegmentReadingLine {
 
@@ -14,18 +12,19 @@ final class FixedLatin1MemorySegmentReadingLine extends Latin1MemorySegmentReadi
   }
 
   @Override
-  public int readUnsignedInt(BoundSegmentedField<BoundIntegerField> field) {
+  public int readUnsignedInt(StringFieldDefinition segmentField, UnsignedFieldDefinition field) {
     throw new UnsupportedOperationException("not segmented record");
   }
 
   @Override
-  public long readUnsignedLong(BoundSegmentedField<BoundLongField> field) {
+  public long readUnsignedLong(StringFieldDefinition segmentField, UnsignedFieldDefinition field) {
     throw new UnsupportedOperationException("not segmented record");
   }
 
   @Override
-  public String readTrimmedString(BoundSegmentedField<BoundStringField> field) {
+  public String readTrimmedString(StringFieldDefinition segmentField, StringFieldDefinition field) {
     throw new UnsupportedOperationException("not segmented record");
   }
+
 
 }

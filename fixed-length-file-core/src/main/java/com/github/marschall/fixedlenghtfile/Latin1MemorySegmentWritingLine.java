@@ -4,10 +4,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.lang.foreign.MemorySegment;
 
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
 final class Latin1MemorySegmentWritingLine implements WritingLine {
   // TODO currently unlimited length, could benefit from slice()
@@ -22,7 +20,7 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
 
   @Override
-  public void writeUnsignedInt(BoundIntegerField field, int value) {
+  public void writeUnsignedInt(UnsignedFieldDefinition field, int value) {
     int offset = field.getOffset();
     int length = field.getLength();
     // RREVIEW other option
@@ -44,7 +42,7 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
 
   @Override
-  public void writeUnsignedLong(BoundLongField field, long value) {
+  public void writeUnsignedLong(UnsignedFieldDefinition field, long value) {
     int offset = field.getOffset();
     int length = field.getLength();
     // TODO Auto-generated method stub
@@ -52,7 +50,7 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
 
   @Override
-  public void writeString(BoundStringField field, String s) {
+  public void writeString(StringFieldDefinition field, String s) {
     int offset = field.getOffset();
     int length = field.getLength();
     // REVIEW this.segment.setString will add 0 terminator
@@ -75,7 +73,7 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
   }
   
   @Override
-  public void writeSegmentIndicator(BoundSegmentIndicatorField field, SegmentIndicator indicator) {
+  public void writeSegmentIndicator(StringFieldDefinition field, SegmentIndicator indicator) {
     int offset = field.getOffset();
     long base = this.start + offset;
     char c = indicator.getValue();

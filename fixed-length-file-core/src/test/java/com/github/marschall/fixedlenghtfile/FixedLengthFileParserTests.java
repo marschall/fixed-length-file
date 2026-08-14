@@ -12,14 +12,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
-
+import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.F;
 import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.H;
 import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.R;
-import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.F;
 
 class FixedLengthFileParserTests {
 
@@ -27,48 +24,63 @@ class FixedLengthFileParserTests {
 
     static final class H {
 
-      static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
+      static final StringFieldDefinition TYPE;
 
-      static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 1);
+      static final StringFieldDefinition FIELD1;
+
+      static {
+        TYPE = new StringFieldDefinition("TYPE", 1, 0);
+        FIELD1 = new StringFieldDefinition("FIELD-1", 1, TYPE.getOffset() + TYPE.getLength());
+      }
 
     }
 
     static final class R {
 
-      static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
-
-
-      static final StringFieldDefinition FIELD2 = new StringFieldDefinition("FIELD-2", 3);
-
-      static final UnsignedFieldDefinition FIELD3 = new UnsignedFieldDefinition("FIELD-3", 3);
-
-      static final StringFieldDefinition S1 = new StringFieldDefinition("S1", 1);
-      static final StringFieldDefinition S2 = new StringFieldDefinition("S2", 1);
-      static final StringFieldDefinition S3 = new StringFieldDefinition("S3", 1);
+      static final StringFieldDefinition TYPE;
+      static final StringFieldDefinition FIELD2;
+      static final UnsignedFieldDefinition FIELD3;
+      static final StringFieldDefinition S1;
+      static final StringFieldDefinition S2;
+      static final StringFieldDefinition S3;
+      
+      static {
+        TYPE = new StringFieldDefinition("TYPE", 1, 0);
+        FIELD2 = new StringFieldDefinition("FIELD-2", 3, TYPE.getOffset() + TYPE.getLength());
+        FIELD3 = new UnsignedFieldDefinition("FIELD-3", 3, FIELD2.getOffset() + FIELD2.getLength());
+        S1 = new StringFieldDefinition("S1", 1, FIELD3.getOffset() + FIELD3.getLength());
+        S2 = new StringFieldDefinition("S2", 1, S1.getOffset() + S1.getLength());
+        S3 = new StringFieldDefinition("S3", 1, S2.getOffset() + S2.getLength());
+      }
 
       static final class Segment1 {
 
-        static final StringFieldDefinition S1_1 = new StringFieldDefinition("S1-1", 1);
+        static final StringFieldDefinition S1_1 = new StringFieldDefinition("S1-1", 1, 0);
 
       }
 
       static final class Segment2 {
-        static final StringFieldDefinition S2_1 = new StringFieldDefinition("S2-1", 1);
+        static final StringFieldDefinition S2_1 = new StringFieldDefinition("S2-1", 1, 0);
 
       }
 
       static final class Segment3 {
 
-        static final StringFieldDefinition S3_1 = new StringFieldDefinition("S3-1", 1);
+        static final StringFieldDefinition S3_1 = new StringFieldDefinition("S3-1", 1, 0);
       }
 
     }
 
     static final class F {
 
-      static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
+      static final StringFieldDefinition TYPE;
 
-      static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 1);
+      static final StringFieldDefinition FIELD1;
+
+      static {
+        TYPE = new StringFieldDefinition("TYPE", 1, 0);
+        FIELD1 = new StringFieldDefinition("FIELD-1", 1, TYPE.getOffset() + TYPE.getLength());
+      }
 
     }
 
@@ -111,20 +123,12 @@ class FixedLengthFileParserTests {
         .build();
 
     RecordDefinition headerDefinition = fileDefinition.getRecordDefinition("H");
-    BoundStringField headerType = headerDefinition.bindStringField(H.TYPE);
-    BoundStringField headerStringField = headerDefinition.bindStringField(H.FIELD1);
     assertEquals(2, headerDefinition.getMaximumLength());
-    
+
     RecordDefinition recordDefinition = fileDefinition.getRecordDefinition("R");
-    BoundStringField recordTypeField = recordDefinition.bindStringField(R.TYPE);
-    BoundSegmentIndicatorField indicator1 = recordDefinition.bindSegmentIndicatorField(R.S1);
-    BoundSegmentIndicatorField indicator2 = recordDefinition.bindSegmentIndicatorField(R.S2);
-    BoundSegmentIndicatorField indicator3 = recordDefinition.bindSegmentIndicatorField(R.S3);
     assertEquals(13, recordDefinition.getMaximumLength());
-    
+
     RecordDefinition footerDefinition = fileDefinition.getRecordDefinition("F");
-    BoundStringField footerType = footerDefinition.bindStringField(F.TYPE);
-    BoundStringField footerStringField = footerDefinition.bindStringField(F.FIELD1);
     assertEquals(2, footerDefinition.getMaximumLength());
 
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
@@ -138,34 +142,38 @@ class FixedLengthFileParserTests {
         assertNotNull(line, "line");
 
         switch (recordType) {
-          case "H" -> {
-            assertEquals("H", line.readTrimmedString(headerType), "header type");
-            assertEquals("1", line.readTrimmedString(headerStringField), "header field 1");
+        case "H" -> {
+          assertEquals("H", line.readTrimmedString(H.TYPE), "header type");
+          assertEquals("1", line.readTrimmedString(H.FIELD1), "header field 1");
+        }
+        case "F" -> {
+          assertEquals("F", line.readTrimmedString(F.TYPE), "footer type");
+          assertEquals("2", line.readTrimmedString(F.FIELD1), "footer field 1");
+        }
+        case "R" -> {
+          assertEquals("R", line.readTrimmedString(R.TYPE), "record type");
+          switch (recordNumber) {
+          case 1 -> {
+            assertSame(SegmentIndicator.PRESENT, R.S1);
+            assertSame(SegmentIndicator.PRESENT, R.S2);
+            assertSame(SegmentIndicator.PRESENT, R.S3);
+
+            assertEquals("X", line.readTrimmedString(R.S1, R.Segment1.S1_1));
+            assertEquals("X", line.readTrimmedString(R.S2, R.Segment2.S2_1));
+            assertEquals("X", line.readTrimmedString(R.S3, R.Segment3.S3_1));
           }
-          case "F" -> {
-            assertEquals("F", line.readTrimmedString(footerType), "footer type");
-            assertEquals("2", line.readTrimmedString(footerStringField), "footer field 1");
+          case 2 -> {
+            assertSame(SegmentIndicator.ABSENT, R.S1);
+            assertSame(SegmentIndicator.ABSENT, R.S2);
+            assertSame(SegmentIndicator.ABSENT, R.S3);
           }
-          case "R" -> {
-            assertEquals("R", line.readTrimmedString(recordTypeField), "record type");
-            switch (recordNumber) {
-              case 1 -> {
-                assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator1));
-                assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator2));
-                assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(indicator3));
-              }
-              case 2 -> {
-                assertSame(SegmentIndicator.ABSENT, line.readSegmentIndicator(indicator1));
-                assertSame(SegmentIndicator.ABSENT, line.readSegmentIndicator(indicator2));
-                assertSame(SegmentIndicator.ABSENT, line.readSegmentIndicator(indicator3));
-              }
-              case 3 -> {
-                assertSame(SegmentIndicator.SPACES, line.readSegmentIndicator(indicator1));
-                assertSame(SegmentIndicator.SPACES, line.readSegmentIndicator(indicator2));
-                assertSame(SegmentIndicator.SPACES, line.readSegmentIndicator(indicator3));
-              }
-            }
+          case 3 -> {
+            assertSame(SegmentIndicator.SPACES, R.S1);
+            assertSame(SegmentIndicator.SPACES, R.S2);
+            assertSame(SegmentIndicator.SPACES, R.S3);
           }
+          }
+        }
         }
       });
     });

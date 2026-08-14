@@ -3,10 +3,8 @@ package com.github.marschall.fixedlenghtfile;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentedField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
 final class SegmentedLatin1MemorySegmentReadingLine extends Latin1MemorySegmentReadingLine {
   
@@ -17,37 +15,37 @@ final class SegmentedLatin1MemorySegmentReadingLine extends Latin1MemorySegmentR
     this.segmentOffsets = Objects.requireNonNull(segmentOffsets, "segmentOffsets");
   }
   
-  private int getSegmentStart(BoundSegmentedField<?> field) {
+  private int getSegmentStart(StringFieldDefinition field) {
     return this.segmentOffsets.getSegmentOffset(field.getSegmentIndex());
   }
 
   @Override
-  public int readUnsignedInt(BoundSegmentedField<BoundIntegerField> field) {
-    int segmentStart = getSegmentStart(field);
+  public int readUnsignedInt(StringFieldDefinition segmentField, UnsignedFieldDefinition field) {
+    int segmentStart = getSegmentStart(segmentField);
     return switch (segmentStart) {
       case SegmentOffsets.SEGMENT_NOT_PRESENT -> throw new IllegalStateException("segment not present");
       case SegmentOffsets.SEGMENT_IS_SPACES -> 0;
-      default -> this.readUnsignedInt(segmentStart, field.getUnderlyingField());
+      default -> this.readUnsignedInt(segmentStart, field);
     };
   }
 
   @Override
-  public long readUnsignedLong(BoundSegmentedField<BoundLongField> field) {
-    int segmentStart = getSegmentStart(field);
+  public long readUnsignedLong(StringFieldDefinition segmentField, UnsignedFieldDefinition field) {
+    int segmentStart = getSegmentStart(segmentField);
     return switch (segmentStart) {
       case SegmentOffsets.SEGMENT_NOT_PRESENT -> throw new IllegalStateException("segment not present");
       case SegmentOffsets.SEGMENT_IS_SPACES -> 0L;
-      default -> this.readUnsignedLong(segmentStart, field.getUnderlyingField());
+      default -> this.readUnsignedLong(segmentStart, field);
     };
   }
 
   @Override
-  public String readTrimmedString(BoundSegmentedField<BoundStringField> field) {
-    int segmentStart = getSegmentStart(field);
+  public String readTrimmedString(StringFieldDefinition segmentField, StringFieldDefinition field) {
+    int segmentStart = getSegmentStart(segmentField);
     return switch (segmentStart) {
       case SegmentOffsets.SEGMENT_NOT_PRESENT -> throw new IllegalStateException("segment not present");
       case SegmentOffsets.SEGMENT_IS_SPACES -> "";
-      default -> this.readTrimmedString(segmentStart, field.getUnderlyingField());
+      default -> this.readTrimmedString(segmentStart, field);
     };
   }
 

@@ -8,8 +8,6 @@ import java.lang.foreign.MemorySegment;
 
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
@@ -17,21 +15,25 @@ class Latin1MemorySegmentWritingLineTests {
 
   static final class R {
 
-    static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
+//    static final StringFieldDefinition TYPE;
+    static final StringFieldDefinition FIELD1;
+    static final StringFieldDefinition FIELD2;
+    static final StringFieldDefinition FIELD3;
+//    static final StringFieldDefinition FIELD4;
+//    static final StringFieldDefinition FIELD5;
+    static final UnsignedFieldDefinition FIELD6;
+    static final UnsignedFieldDefinition FIELD7;
 
-    static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 6);
-
-    static final StringFieldDefinition FIELD2 = new StringFieldDefinition("FIELD-2", 6);
-
-    static final StringFieldDefinition FIELD3 = new StringFieldDefinition("FIELD-3", 6);
-
-    static final StringFieldDefinition FIELD4 = new StringFieldDefinition("FIELD-4", 6);
-
-    static final StringFieldDefinition FIELD5 = new StringFieldDefinition("FIELD-5", 6);
-
-    static final UnsignedFieldDefinition FIELD6 = new UnsignedFieldDefinition("FIELD-6", 2);
-
-    static final UnsignedFieldDefinition FIELD7 = new UnsignedFieldDefinition("FIELD-7", 2);
+    static {
+//      TYPE = new StringFieldDefinition("TYPE", 1, 0);
+      FIELD1 = new StringFieldDefinition("FIELD-1", 6, 0);
+      FIELD2 = new StringFieldDefinition("FIELD-2", 6, FIELD1.getOffset() + FIELD1.getLength());
+      FIELD3 = new StringFieldDefinition("FIELD-3", 6, FIELD2.getOffset() + FIELD1.getLength());
+//      FIELD4 = new StringFieldDefinition("FIELD-4", 6, FIELD3.getOffset() + FIELD3.getLength());
+//      FIELD5 = new StringFieldDefinition("FIELD-5", 6, FIELD4.getOffset() + FIELD4.getLength());
+      FIELD6 = new UnsignedFieldDefinition("FIELD-6", 2, FIELD3.getOffset() + FIELD3.getLength());
+      FIELD7 = new UnsignedFieldDefinition("FIELD-7", 2, FIELD6.getOffset() + FIELD6.getLength());
+    }
 
   }
 
@@ -48,21 +50,16 @@ class Latin1MemorySegmentWritingLineTests {
         .build();
 
     var recordDefinition = fileDefinition.getRecordDefinition("R");
-    BoundStringField field1 = recordDefinition.bindStringField(R.FIELD1);
-    BoundStringField field2 = recordDefinition.bindStringField(R.FIELD2);
-    BoundStringField field3 = recordDefinition.bindStringField(R.FIELD3);
-    BoundIntegerField field6 = recordDefinition.bindUnsingedIntegerField(R.FIELD6);
-    BoundIntegerField field7 = recordDefinition.bindUnsingedIntegerField(R.FIELD7);
 
     byte[] target = new byte[recordDefinition.getMaximumLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
     var line = new Latin1MemorySegmentWritingLine(segment, 0L);
 
-    line.writeString(field1, "Fi\u00E9ld1");
-    line.writeString(field2, "Fi\u00E9ld");
-    line.writeString(field3, null);
-    line.writeUnsignedInt(field6, 12);
-    line.writeUnsignedInt(field7, 3);
+    line.writeString(R.FIELD1, "Fi\u00E9ld1");
+    line.writeString(R.FIELD2, "Fi\u00E9ld");
+    line.writeString(R.FIELD3, null);
+    line.writeUnsignedInt(R.FIELD6, 12);
+    line.writeUnsignedInt(R.FIELD7, 3);
 
     assertEquals("Fi\u00E9ld1Fi\u00E9ld       1203", new String(target, ISO_8859_1));
   }

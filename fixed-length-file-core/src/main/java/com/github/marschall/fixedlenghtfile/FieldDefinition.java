@@ -7,17 +7,24 @@ public abstract sealed class FieldDefinition {
   private final String name;
 
   private final short length;
+  
+  private final short offset;
 
-  FieldDefinition(String name, int length) {
+  FieldDefinition(String name, int length, int offset) {
     if (length <= 0) {
       throw new IllegalArgumentException("length must be positive");
     }
     this.name = Objects.requireNonNull(name, "name");
     this.length = Utils.toPositiveShortExact(length);
+    this.offset = Utils.toPositiveShortExact(offset);
   }
 
   int getLength() {
-    return length;
+    return this.length;
+  }
+  
+  int getOffset() {
+    return this.offset;
   }
 
   String getName() {
@@ -51,24 +58,24 @@ public abstract sealed class FieldDefinition {
 
   public static final class StringFieldDefinition extends FieldDefinition {
 
-    public StringFieldDefinition(String name, int length) {
-      super(name, length);
+    public StringFieldDefinition(String name, int length, int offset) {
+      super(name, length, offset);
     }
 
   }
 
   public static final class UnsignedFieldDefinition extends FieldDefinition {
 
-    public UnsignedFieldDefinition(String name, int length) {
-      super(name, length);
+    public UnsignedFieldDefinition(String name, int length, int offset) {
+      super(name, length, offset);
     }
 
   }
 
   public static final class SignedFieldDefinition extends FieldDefinition {
 
-    public SignedFieldDefinition(String name, int length) {
-      super(name, length);
+    public SignedFieldDefinition(String name, int length, int offset) {
+      super(name, length, offset);
     }
 
   }

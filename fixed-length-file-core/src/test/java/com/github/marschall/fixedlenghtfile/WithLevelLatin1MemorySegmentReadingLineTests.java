@@ -13,10 +13,6 @@ import java.time.LocalTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundBigDecimalField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLocalDateTimeField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalDateField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalTimeField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
@@ -24,17 +20,21 @@ class WithLevelLatin1MemorySegmentReadingLineTests {
 
   static final class R {
 
-    static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
-
-    static final UnsignedFieldDefinition DATE_FIELD = new UnsignedFieldDefinition("DATE-FIELD", 8);
-
-    static final UnsignedFieldDefinition TIME_FIELD6 = new UnsignedFieldDefinition("TIME-FIELD-6", 6);
-
-    static final UnsignedFieldDefinition TIME_FIELD8 = new UnsignedFieldDefinition("TIME-FIELD-8", 8);
-
-    static final UnsignedFieldDefinition AMOUNT_FIELD = new UnsignedFieldDefinition("AMOUNT-FIELD", 12);
-
-    static final UnsignedFieldDefinition EXPONENT_FIELD = new UnsignedFieldDefinition("EXPONENT-FIELD", 1);
+    static final StringFieldDefinition TYPE;
+    static final UnsignedFieldDefinition DATE_FIELD;
+    static final UnsignedFieldDefinition TIME_FIELD6;
+    static final UnsignedFieldDefinition TIME_FIELD8;
+    static final UnsignedFieldDefinition AMOUNT_FIELD;
+    static final UnsignedFieldDefinition EXPONENT_FIELD;
+    
+    static {
+      TYPE = new StringFieldDefinition("TYPE", 1, 0);
+      DATE_FIELD = new UnsignedFieldDefinition("DATE-FIELD", 8, TYPE.getOffset() + TYPE.getLength());
+      TIME_FIELD6 = new UnsignedFieldDefinition("TIME-FIELD-6", 6, DATE_FIELD.getOffset() + DATE_FIELD.getLength());
+      TIME_FIELD8 = new UnsignedFieldDefinition("TIME-FIELD-8", 8, TIME_FIELD6.getOffset() + TIME_FIELD6.getLength());
+      AMOUNT_FIELD = new UnsignedFieldDefinition("AMOUNT-FIELD", 12, TIME_FIELD8.getOffset() + TIME_FIELD8.getLength());
+      EXPONENT_FIELD = new UnsignedFieldDefinition("EXPONENT-FIELD", 1, AMOUNT_FIELD.getOffset() + AMOUNT_FIELD.getLength());
+    }
 
   }
 
@@ -62,27 +62,19 @@ class WithLevelLatin1MemorySegmentReadingLineTests {
         })
         .build();
 
-    var recordDefinition = highLevelDefinition.getRecordDefinition("R");
-    BoundLocalDateField dateField = recordDefinition.bindLocalDateField(R.DATE_FIELD);
-    BoundLocalTimeField timeField6 = recordDefinition.bindLocalTimeField(R.TIME_FIELD6);
-    BoundLocalTimeField timeField8 = recordDefinition.bindLocalTimeField(R.TIME_FIELD8);
-    BoundLocalDateTimeField localDateTimeField6 = recordDefinition.bindLocalDateTimeField(R.DATE_FIELD, R.TIME_FIELD6);
-    BoundLocalDateTimeField localDateTimeField8 = recordDefinition.bindLocalDateTimeField(R.DATE_FIELD, R.TIME_FIELD8);
-    BoundBigDecimalField bigDecimalField = recordDefinition.bindBigDecimalField(R.AMOUNT_FIELD, R.EXPONENT_FIELD);
-
     this.parser.parseFile(highLevelDefinition, path, file -> {
       file.parseFile((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         assertEquals(0, recordNumber, "record number");
 
-        assertEquals(LocalDate.of(2026, 8, 9), line.readLocalDate(dateField));
-        assertEquals(LocalTime.of(20, 52, 13), line.readLocalTime(timeField6));
-        assertEquals(LocalTime.of(20, 52, 14, 560_000_000), line.readLocalTime(timeField8));
+        assertEquals(LocalDate.of(2026, 8, 9), R.DATE_FIELD);
+        assertEquals(LocalTime.of(20, 52, 13), R.TIME_FIELD6);
+        assertEquals(LocalTime.of(20, 52, 14, 560_000_000), R.TIME_FIELD8);
 
-        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13)), line.readLocalDateTime(localDateTimeField6));
-        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000)), line.readLocalDateTime(localDateTimeField8));
+        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13)), line.readLocalDateTime(R.DATE_FIELD, R.TIME_FIELD6));
+        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000)), line.readLocalDateTime(R.DATE_FIELD, R.TIME_FIELD8));
 
-        assertThat(line.readBigDecimal(bigDecimalField)).isEqualByComparingTo(new BigDecimal("1234567890.12"));
+        assertThat(line.readBigDecimal(R.AMOUNT_FIELD, R.EXPONENT_FIELD)).isEqualByComparingTo(new BigDecimal("1234567890.12"));
       });
     });
   }

@@ -7,7 +7,6 @@ import java.lang.foreign.MemorySegment;
 import java.util.List;
 import java.util.Map;
 
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
@@ -138,9 +137,7 @@ public final class FixedLengthFile {
   }
   
   private SegmentIndicator readSegmentIndicator(long lineStart, SegmentedRecordDefinition recordDefinition, StringFieldDefinition segmentIndicatorFieldDefinition) {
-    // TODO bind and cache
-    BoundSegmentIndicatorField segmentIndicatorField = recordDefinition.bindSegmentIndicatorField(segmentIndicatorFieldDefinition);
-    byte b = this.segment.getAtIndex(JAVA_BYTE, lineStart + segmentIndicatorField.getOffset());
+    byte b = this.segment.getAtIndex(JAVA_BYTE, lineStart + segmentIndicatorFieldDefinition.getOffset());
     char c = (char) Byte.toUnsignedInt(b);
     return switch (c) {
       case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;

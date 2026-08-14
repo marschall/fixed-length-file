@@ -68,8 +68,12 @@ public class ConfigurationGenerator {
     String fieldId = field.id();
     ClassName fieldType = getClassName(field.dataType());
     return FieldSpec.builder(fieldType, fieldId, PUBLIC, STATIC, FINAL)
-            .initializer("new $T($S, $L)", fieldType, fieldId, field.length())
-            .build();
+        .addJavadoc(field.name())
+        .addJavadoc("\n<p>\n")
+        .addJavadoc(field.description().replace("$", "$$"))
+        .addJavadoc("\n</p>")
+        .initializer("new $T($S, $L, $L)", fieldType, fieldId, field.length(), field.offset())
+        .build();
   }
 
   private static ClassName getClassName(DataType dataType) {

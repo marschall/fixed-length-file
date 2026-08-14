@@ -6,41 +6,34 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import com.github.marschall.fixedlenghtfile.BoundField.BoundBigDecimalField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundLocalDateTimeField;
-import com.github.marschall.fixedlenghtfile.BoundField.BoundSegmentedField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundIntegerField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalDateField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLocalTimeField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundLongField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundSegmentIndicatorField;
-import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringField;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
 public interface ReadingLine {
 
-  int readUnsignedInt(BoundIntegerField field);
+  int readUnsignedInt(UnsignedFieldDefinition field);
 
-  long readUnsignedLong(BoundLongField field);
+  long readUnsignedLong(UnsignedFieldDefinition field);
 
-  String readTrimmedString(BoundStringField field);
+  String readTrimmedString(StringFieldDefinition field);
 
-  LocalDate readLocalDate(BoundLocalDateField field);
+  LocalDate readLocalDate(UnsignedFieldDefinition field);
 
-  LocalTime readLocalTime(BoundLocalTimeField field);
+  LocalTime readLocalTime(UnsignedFieldDefinition field);
 
-  LocalDateTime readLocalDateTime(BoundLocalDateTimeField field);
+  LocalDateTime readLocalDateTime(UnsignedFieldDefinition dateField, UnsignedFieldDefinition timeField);
   
-  BigDecimal readBigDecimal(BoundBigDecimalField field);
+  BigDecimal readBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField);
   
   // segmented access
 
-  int readUnsignedInt(BoundSegmentedField<BoundIntegerField> field);
+  int readUnsignedInt(StringFieldDefinition segmentField, UnsignedFieldDefinition field);
 
-  long readUnsignedLong(BoundSegmentedField<BoundLongField> field);
+  long readUnsignedLong(StringFieldDefinition segmentField, UnsignedFieldDefinition field);
 
-  String readTrimmedString(BoundSegmentedField<BoundStringField> field);
+  String readTrimmedString(StringFieldDefinition segmentField, StringFieldDefinition field);
 
-  SegmentIndicator readSegmentIndicator(BoundSegmentIndicatorField field);
+  SegmentIndicator readSegmentIndicator(StringFieldDefinition field);
 
   // in char
   int getLength();

@@ -24,9 +24,10 @@ import org.xml.sax.SAXException;
 public class ConfigurationParser {
 
   private final XPath xPath;
-  private final XPathExpression nameText;
-  private final XPathExpression continueNumberingText;
   private final XPathExpression idText;
+  private final XPathExpression nameText;
+  private final XPathExpression descriptionText;
+  private final XPathExpression continueNumberingText;
   private final XPathExpression lengthText;
   private final XPathExpression datatypeText;
   private final XPathExpression recordSegmentPath;
@@ -36,9 +37,10 @@ public class ConfigurationParser {
   public ConfigurationParser(InterfaceVersion currentVersion) throws XPathExpressionException {
     this.currentVersion = currentVersion;
     this.xPath = XPathFactory.newInstance().newXPath();
-    this.nameText = xPath.compile("./name[1]/text()");
-    this.continueNumberingText = xPath.compile("./continueNumbering[1]/text()");
     this.idText = xPath.compile("./id[1]/text()");
+    this.nameText = xPath.compile("./name[1]/text()");
+    this.descriptionText = xPath.compile("./description[1]/text()");
+    this.continueNumberingText = xPath.compile("./continueNumbering[1]/text()");
     this.lengthText = xPath.compile("./length[1]/text()");
     this.datatypeText = xPath.compile("./datatype[1]/text()");
     this.recordSegmentPath = xPath.compile("./recordSegment");
@@ -77,9 +79,18 @@ public class ConfigurationParser {
       for (Node field : this.fieldPath.evaluateExpression(recordSegment, XPathNodes.class)) {
         if (this.isInCurrentVersion(field)) {
           String id = this.idText.evaluateExpression(field, String.class);
-          String length = this.lengthText.evaluateExpression(field, String.class);
+          String name = this.nameText.evaluateExpression(field, String.class);
+          String description = this.descriptionText.evaluateExpression(field, String.class);
+          Integer length = this.lengthText.evaluateExpression(field, Integer.class);
           DataType dataType = mapDataType(field);
-          Field newField = new Field(id, Integer.parseInt(length), dataType);
+          int offset;
+          if (currentFields.isEmpty()) {
+            offset = 0;
+          } else {
+            Field previous = currentFields.getLast();
+            offset = previous.offset() + previous.length();
+          }
+          Field newField = new Field(id, name, length, offset, dataType, description);
           if (!currentFields.isEmpty() && currentFields.getLast().id().equals(id)) {
             // multiple final versions, overwrite the previous one
             currentFields.set(currentFields.size() - 1, newField);
