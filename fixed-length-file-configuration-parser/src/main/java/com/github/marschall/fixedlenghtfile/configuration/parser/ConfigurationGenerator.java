@@ -27,7 +27,8 @@ public class ConfigurationGenerator {
       throws XPathExpressionException, ParserConfigurationException, SAXException, IOException {
     ConfigurationParser parser = new ConfigurationParser(currentVersion);
     List<RecordDefinition> recordDefinitions = parser.parse(interfacePath, interestingRecordTypes);
-    generate(recordDefinitions, outputDirectory, packageName, "InterfaceDefinition");
+    String className = "InterfaceDefinition" + currentVersion.toInterfaceString();
+    generate(recordDefinitions, outputDirectory, packageName, className);
   }
   
   private void generate(List<RecordDefinition> recordDefintions, Path outputDirectory, String packageName, String className) throws IOException {
@@ -68,10 +69,10 @@ public class ConfigurationGenerator {
     String fieldId = field.id();
     ClassName fieldType = getClassName(field.dataType());
     return FieldSpec.builder(fieldType, fieldId, PUBLIC, STATIC, FINAL)
-        .addJavadoc(field.name())
-        .addJavadoc("\n<p>\n")
+        .addJavadoc("<h2>$L</h2>", field.name())
+        .addJavadoc("\n<p><pre>\n")
         .addJavadoc(field.description().replace("$", "$$"))
-        .addJavadoc("\n</p>")
+        .addJavadoc("\n</pre></p>")
         .initializer("new $T($S, $L, $L)", fieldType, fieldId, field.length(), field.offset())
         .build();
   }

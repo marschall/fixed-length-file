@@ -144,4 +144,10 @@ class InterfaceVersionTests {
     assertThat(finalVersion).isGreaterThan(workingVersion);
   }
 
+  @Test
+  void toInterfaceString() {
+    assertEquals("236", InterfaceVersion.parse("2.36.0.f.2").toInterfaceString());
+    assertEquals("206", InterfaceVersion.parse("2.6.0.f.2").toInterfaceString());
+  }
+
 }

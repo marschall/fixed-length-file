@@ -167,12 +167,18 @@ abstract sealed class InterfaceVersion implements Comparable<InterfaceVersion> {
   public int hashCode() {
     return ((((31 + this.major) * 31) + this.minor) * 31) + this.micro;
   }
+  
+  public String toInterfaceString() {
+    int minorInt = Byte.toUnsignedInt(this.minor);
+    return  Integer.toString(Byte.toUnsignedInt(this.major))
+         + (minorInt < 10 ? "0" : "") + Integer.toString(minorInt);
+  }
 
   @Override
   public String toString() {
-    return Integer.toString(Byte.toUnsignedInt(major))
-        + '.' + Integer.toString(Byte.toUnsignedInt(minor))
-        + '.' + Integer.toString(Byte.toUnsignedInt(micro));
+    return Integer.toString(Byte.toUnsignedInt(this.major))
+        + '.' + Integer.toString(Byte.toUnsignedInt(this.minor))
+        + '.' + Integer.toString(Byte.toUnsignedInt(this.micro));
   }
 
 }
