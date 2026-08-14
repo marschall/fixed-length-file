@@ -1,3 +1,4 @@
 target/
 /fixed-length-file-configuration-parser/src/main/java/com/github/marschall/fixedlenghtfile/configuration/parser/InterfaceDefinition.java
+.DS_Store
 

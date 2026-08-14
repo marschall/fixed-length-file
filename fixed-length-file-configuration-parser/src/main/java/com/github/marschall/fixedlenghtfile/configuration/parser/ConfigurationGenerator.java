@@ -2,6 +2,7 @@ package com.github.marschall.fixedlenghtfile.configuration.parser;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -14,7 +15,9 @@ import javax.xml.xpath.XPathExpressionException;
 import org.xml.sax.SAXException;
 
 import com.github.marschall.fixedlenghtfile.configuration.parser.RecordDefinitionFragment.RecordDefinition;
+import com.github.marschall.fixedlenghtfile.configuration.parser.RecordDefinitionFragment.SegmentDefinition;
 import com.palantir.javapoet.ClassName;
+import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.TypeSpec;
 
@@ -28,14 +31,53 @@ public class ConfigurationGenerator {
   }
   
   private void generate(List<RecordDefinition> recordDefintions, Path outputDirectory, String packageName, String className) throws IOException {
-    TypeSpec constantContainer = TypeSpec.classBuilder(ClassName.get(packageName, className))
-        .addModifiers(PUBLIC, FINAL)
-        .build();
+    TypeSpec.Builder constantContainerBuilder = TypeSpec.classBuilder(ClassName.get(packageName, className))
+        .addModifiers(PUBLIC, FINAL);
 
-    JavaFile javaFile = JavaFile.builder(packageName, constantContainer)
+    for (RecordDefinition recordDefinition : recordDefintions) {
+      ClassName interfaceDefinitionClassName = ClassName.get(packageName, className, recordDefinition.getName());
+      TypeSpec.Builder recordSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName)
+              .addModifiers(PUBLIC, STATIC, FINAL);
+      for (Field field : recordDefinition.getFields()) {
+        FieldSpec fieldSpec = buildFieldSpec(field);
+        recordSpecBuilder.addField(fieldSpec);
+      }
+      if (recordDefinition.hasSegments()) {
+        int i = 1;
+        for (SegmentDefinition segment : recordDefinition.getSegments()) {
+          TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + i))
+                  .addModifiers(PUBLIC, STATIC, FINAL);
+          i += 1;
+          for (Field field : segment.getFields()) {
+            FieldSpec fieldSpec = buildFieldSpec(field);
+            segmentSpecBuilder.addField(fieldSpec);
+          }
+          recordSpecBuilder.addType(segmentSpecBuilder.build());
+        }
+      }
+      constantContainerBuilder.addType(recordSpecBuilder.build());
+    }
+
+    JavaFile javaFile = JavaFile.builder(packageName, constantContainerBuilder.build())
         .build();
 
     javaFile.writeToPath(outputDirectory);
+  }
+
+  private static FieldSpec buildFieldSpec(Field field) {
+    String fieldId = field.id();
+    ClassName fieldType = getClassName(field.dataType());
+    return FieldSpec.builder(fieldType, fieldId, PUBLIC, STATIC, FINAL)
+            .initializer("new $T($S, $L)", fieldType, fieldId, field.length())
+            .build();
+  }
+
+  private static ClassName getClassName(DataType dataType) {
+    return switch (dataType) {
+      case CHAR -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "StringFieldDefinition");
+      case NUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "UnsignedFieldDefinition");
+      case SNUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "SignedFieldDefinition");
+    };
   }
 
   public static void main(String[] args) {

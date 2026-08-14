@@ -7,4 +7,12 @@
   </parent>
   <artifactId>fixed-length-file-ui</artifactId>
   <name>Fixed Length File UI</name>
+  
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>fixed-length-file-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>

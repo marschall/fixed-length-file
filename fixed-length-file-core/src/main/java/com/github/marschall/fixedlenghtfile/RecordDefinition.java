@@ -123,12 +123,12 @@ public abstract sealed class RecordDefinition {
       super(type, records);
       this.length = computeLength(records);
     }
-    
+
     @Override
     int getBaseLength() {
       return this.length;
     }
-    
+
     @Override
     int getMaximumLength() {
       return this.length;
@@ -140,7 +140,7 @@ public abstract sealed class RecordDefinition {
 
     private final int baseLength;
     private final int maxiumLength;
-
+    private final int baseRecordCount;
     private final List<SegmentDefinition> segmentDefinitions;
 
     SegmentedRecordDefinition(String type, List<FieldAndOffset> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
@@ -148,6 +148,7 @@ public abstract sealed class RecordDefinition {
       this.segmentDefinitions = segmentDefinitions;
       this.baseLength = computeLength(fixedRecords);
       this.maxiumLength = computeMaxiumLength(fixedRecords, segmentDefinitions);
+      this.baseRecordCount = fixedRecords.size();
     }
 
     static int computeMaxiumLength(List<FieldAndOffset> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
@@ -170,6 +171,15 @@ public abstract sealed class RecordDefinition {
 
     List<SegmentDefinition> getSegmentDefinitions() {
       return this.segmentDefinitions;
+    }
+
+    
+    public int getTotalFieldCount() {
+      int totalFieldCount = this.baseRecordCount;
+      for (var segmentDefinition : this.segmentDefinitions) {
+        totalFieldCount += segmentDefinition.getFieldCount();
+      }
+      return totalFieldCount;
     }
 
   }
@@ -197,6 +207,10 @@ public abstract sealed class RecordDefinition {
     
     StringFieldDefinition getSegmentIndicatorField() {
       return this.segmentIndicatorField;
+    }
+
+    int getFieldCount() {
+      return this.fields.size();
     }
 
     @Override

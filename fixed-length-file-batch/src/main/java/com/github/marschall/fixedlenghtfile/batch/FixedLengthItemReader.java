@@ -73,13 +73,13 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
   private Path getPath() {
     Assert.notNull(this.resource, "Input resource must be set");
     if (!this.resource.exists()) {
-      throw new IllegalStateException("Input resource must exist: " + resource);
+      throw new IllegalStateException("Input resource must exist: " + this.resource);
     }
     if (!this.resource.isReadable()) {
-      throw new IllegalStateException("Input resource must be readable: " + resource);
+      throw new IllegalStateException("Input resource must be readable: " + this.resource);
     }
     if (!this.resource.isFile()) {
-      throw new IllegalStateException("Input resource must be a file: " + resource);
+      throw new IllegalStateException("Input resource must be a file: " + this.resource);
     }
     try {
       return this.resource.getFilePath();

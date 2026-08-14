@@ -29,6 +29,21 @@ public final class FixedLengthFile {
     this.recordDefinitionMap = fileDefinition.getRecordDefinitionMap();
     this.segment = segment;
   }
+  
+//  public int countLines(String recordType) {
+//    // TODO
+//    // TODO map record count of type to global record count
+//    // TODO safe offset 
+//    return 0;
+//  }
+//  
+//  public <T> T parseLine(RecordIdentifier identifier, LineMapper<T> mapper) {
+//    return mapper.map(null, null, null);
+//  }
+//  
+//  final class RecordIdentifier {
+//    
+//  }
 
   public void parseFile(LineConsumer consumer) {
     if (this.segment.byteSize() == 0) {
