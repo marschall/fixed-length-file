@@ -17,22 +17,62 @@ import com.github.marschall.fixedlenghtfile.BoundField.OffsetField.BoundStringFi
 import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
 
-class FixedLengthFileParserTests {
-  
+import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.H;
+import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.R;
+import com.github.marschall.fixedlenghtfile.FixedLengthFileParserTests.SampleWithRecordType.F;
 
-  static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
-  
-  static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 1);
-  static final StringFieldDefinition FIELD2 = new StringFieldDefinition("FIELD-2", 3);
-  static final UnsignedFieldDefinition FIELD3 = new UnsignedFieldDefinition("FIELD-2", 3);
-  
-  static final StringFieldDefinition S1 = new StringFieldDefinition("S1", 1);
-  static final StringFieldDefinition S2 = new StringFieldDefinition("S2", 1);
-  static final StringFieldDefinition S3 = new StringFieldDefinition("S3", 1);
-  
-  static final StringFieldDefinition S1_1 = new StringFieldDefinition("S1-1", 1);
-  static final StringFieldDefinition S2_1 = new StringFieldDefinition("S2-1", 1);
-  static final StringFieldDefinition S3_1 = new StringFieldDefinition("S3-1", 1);
+class FixedLengthFileParserTests {
+
+  static final class SampleWithRecordType {
+
+    static final class H {
+
+      static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
+
+      static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 1);
+
+    }
+
+    static final class R {
+
+      static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
+
+
+      static final StringFieldDefinition FIELD2 = new StringFieldDefinition("FIELD-2", 3);
+
+      static final UnsignedFieldDefinition FIELD3 = new UnsignedFieldDefinition("FIELD-3", 3);
+
+      static final StringFieldDefinition S1 = new StringFieldDefinition("S1", 1);
+      static final StringFieldDefinition S2 = new StringFieldDefinition("S2", 1);
+      static final StringFieldDefinition S3 = new StringFieldDefinition("S3", 1);
+
+      static final class Segment1 {
+
+        static final StringFieldDefinition S1_1 = new StringFieldDefinition("S1-1", 1);
+
+      }
+
+      static final class Segment2 {
+        static final StringFieldDefinition S2_1 = new StringFieldDefinition("S2-1", 1);
+
+      }
+
+      static final class Segment3 {
+
+        static final StringFieldDefinition S3_1 = new StringFieldDefinition("S3-1", 1);
+      }
+
+    }
+
+    static final class F {
+
+      static final StringFieldDefinition TYPE = new StringFieldDefinition("TYPE", 1);
+
+      static final StringFieldDefinition FIELD1 = new StringFieldDefinition("FIELD-1", 1);
+
+    }
+
+  }
 
   private FixedLengthFileParser parser;
 
@@ -47,44 +87,44 @@ class FixedLengthFileParserTests {
 
     FileDefinition fileDefinition = FileDefinition.builder()
         .defineRecordType("H", binder -> {
-          binder.bind(TYPE);
-          binder.bind(FIELD1);
+          binder.bind(H.TYPE);
+          binder.bind(H.FIELD1);
         })
         .defineRecordType("R", binder -> {
-          binder.bind(TYPE);
-          binder.bind(FIELD2);
-          binder.bind(FIELD3);
-          binder.defineSegment(S1, segmentBinder -> {
-            segmentBinder.bind(S1_1);
+          binder.bind(R.TYPE);
+          binder.bind(R.FIELD2);
+          binder.bind(R.FIELD3);
+          binder.defineSegment(R.S1, segmentBinder -> {
+            segmentBinder.bind(R.Segment1.S1_1);
           });
-          binder.defineSegment(S2, segmentBinder -> {
-            segmentBinder.bind(S2_1);
+          binder.defineSegment(R.S2, segmentBinder -> {
+            segmentBinder.bind(R.Segment2.S2_1);
           });
-          binder.defineSegment(S3, segmentBinder -> {
-            segmentBinder.bind(S3_1);
+          binder.defineSegment(R.S3, segmentBinder -> {
+            segmentBinder.bind(R.Segment3.S3_1);
           });
         })
         .defineRecordType("F", binder -> {
-          binder.bind(TYPE);
-          binder.bind(FIELD1);
+          binder.bind(F.TYPE);
+          binder.bind(F.FIELD1);
         })
         .build();
 
     RecordDefinition headerDefinition = fileDefinition.getRecordDefinition("H");
-    BoundStringField headerType = headerDefinition.bindStringField(TYPE);
-    BoundStringField headerStringField = headerDefinition.bindStringField(FIELD1);
+    BoundStringField headerType = headerDefinition.bindStringField(H.TYPE);
+    BoundStringField headerStringField = headerDefinition.bindStringField(H.FIELD1);
     assertEquals(2, headerDefinition.getMaximumLength());
     
     RecordDefinition recordDefinition = fileDefinition.getRecordDefinition("R");
-    BoundStringField recordTypeField = recordDefinition.bindStringField(TYPE);
-    BoundSegmentIndicatorField indicator1 = recordDefinition.bindSegmentIndicatorField(S1);
-    BoundSegmentIndicatorField indicator2 = recordDefinition.bindSegmentIndicatorField(S2);
-    BoundSegmentIndicatorField indicator3 = recordDefinition.bindSegmentIndicatorField(S3);
+    BoundStringField recordTypeField = recordDefinition.bindStringField(R.TYPE);
+    BoundSegmentIndicatorField indicator1 = recordDefinition.bindSegmentIndicatorField(R.S1);
+    BoundSegmentIndicatorField indicator2 = recordDefinition.bindSegmentIndicatorField(R.S2);
+    BoundSegmentIndicatorField indicator3 = recordDefinition.bindSegmentIndicatorField(R.S3);
     assertEquals(13, recordDefinition.getMaximumLength());
     
     RecordDefinition footerDefinition = fileDefinition.getRecordDefinition("F");
-    BoundStringField footerType = footerDefinition.bindStringField(TYPE);
-    BoundStringField footerStringField = footerDefinition.bindStringField(FIELD1);
+    BoundStringField footerType = footerDefinition.bindStringField(F.TYPE);
+    BoundStringField footerStringField = footerDefinition.bindStringField(F.FIELD1);
     assertEquals(2, footerDefinition.getMaximumLength());
 
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
