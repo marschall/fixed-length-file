@@ -19,10 +19,18 @@ import com.github.marschall.fixedlenghtfile.configuration.parser.RecordDefinitio
 import com.palantir.javapoet.ClassName;
 import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
+import com.palantir.javapoet.MethodSpec;
+import com.palantir.javapoet.ParameterizedTypeName;
 import com.palantir.javapoet.TypeSpec;
+import com.palantir.javapoet.TypeName;
 
 public class ConfigurationGenerator {
   
+  private static final ClassName SIGNED_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "SignedFieldDefinition");
+  private static final ClassName UNSIGNED_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "UnsignedFieldDefinition");
+  private static final ClassName STRING_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "StringFieldDefinition");
+  private static final ClassName SEGMENT_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "SegmentFieldDefinition");
+
   public void generateTo(InterfaceVersion currentVersion, Set<String> interestingRecordTypes, Path interfacePath, Path outputDirectory, String packageName)
       throws XPathExpressionException, ParserConfigurationException, SAXException, IOException {
     ConfigurationParser parser = new ConfigurationParser(currentVersion);
@@ -43,17 +51,22 @@ public class ConfigurationGenerator {
         FieldSpec fieldSpec = buildFieldSpec(field);
         recordSpecBuilder.addField(fieldSpec);
       }
+      MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
+          .returns(ClassName.get("com.github.marschall.fixedlenghtfile", "RecordDefinition"))
+          .addModifiers(PUBLIC, STATIC)
+          .addStatement("return null");
+      recordSpecBuilder.addMethod(definitionBuilder.build());
       if (recordDefinition.hasSegments()) {
-        int i = 1;
+        int segmentIndex = 1;
         for (SegmentDefinition segment : recordDefinition.getSegments()) {
-          TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + i))
+          TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + (segmentIndex + 1)))
                   .addModifiers(PUBLIC, STATIC, FINAL);
-          i += 1;
           for (Field field : segment.getFields()) {
-            FieldSpec fieldSpec = buildFieldSpec(field);
+            FieldSpec fieldSpec = buildSegmentFieldSpec(segmentIndex, field);
             segmentSpecBuilder.addField(fieldSpec);
           }
           recordSpecBuilder.addType(segmentSpecBuilder.build());
+          segmentIndex += 1;
         }
       }
       constantContainerBuilder.addType(recordSpecBuilder.build());
@@ -71,17 +84,30 @@ public class ConfigurationGenerator {
     return FieldSpec.builder(fieldType, fieldId, PUBLIC, STATIC, FINAL)
         .addJavadoc("<h2>$L</h2>", field.name())
         .addJavadoc("\n<p><pre>\n")
-        .addJavadoc(field.description().replace("$", "$$"))
+        .addJavadoc(field.description().replace("$", "$$")) // escape $
         .addJavadoc("\n</pre></p>")
         .initializer("new $T($S, $L, $L)", fieldType, fieldId, field.length(), field.offset())
+        .build();
+  }
+  
+  private static FieldSpec buildSegmentFieldSpec(int segmentIndex, Field field) {
+    String fieldId = field.id();
+    ClassName delegateType = getClassName(field.dataType());
+    TypeName fieldType = ParameterizedTypeName.get(SEGMENT_FIELD_DEFINITION, delegateType);
+    return FieldSpec.builder(fieldType, fieldId, PUBLIC, STATIC, FINAL)
+        .addJavadoc("<h2>$L</h2>", field.name())
+        .addJavadoc("\n<p><pre>\n")
+        .addJavadoc(field.description().replace("$", "$$")) // escape $
+        .addJavadoc("\n</pre></p>")
+        .initializer("new $T($L, new $T($S, $L, $L))", fieldType, segmentIndex, delegateType, fieldId, field.length(), field.offset())
         .build();
   }
 
   private static ClassName getClassName(DataType dataType) {
     return switch (dataType) {
-      case CHAR -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "StringFieldDefinition");
-      case NUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "UnsignedFieldDefinition");
-      case SNUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "SignedFieldDefinition");
+      case CHAR -> STRING_FIELD_DEFINITION;
+      case NUM -> UNSIGNED_FIELD_DEFINITION;
+      case SNUM -> SIGNED_FIELD_DEFINITION;
     };
   }
 
