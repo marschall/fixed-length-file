@@ -6,8 +6,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
 
 public interface ReadingLine {
 
@@ -27,11 +28,11 @@ public interface ReadingLine {
   
   // segmented access
 
-  int readUnsignedInt(StringFieldDefinition segmentField, UnsignedFieldDefinition field);
+  int readUnsignedInt(SegmentFieldDefinition<UnsignedFieldDefinition> field);
 
-  long readUnsignedLong(StringFieldDefinition segmentField, UnsignedFieldDefinition field);
+  long readUnsignedLong(SegmentFieldDefinition<UnsignedFieldDefinition>  field);
 
-  String readTrimmedString(StringFieldDefinition segmentField, StringFieldDefinition field);
+  String readTrimmedString(SegmentFieldDefinition<StringFieldDefinition> field);
 
   SegmentIndicator readSegmentIndicator(StringFieldDefinition field);
 

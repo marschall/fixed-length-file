@@ -7,7 +7,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.List;
 import java.util.Map;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;

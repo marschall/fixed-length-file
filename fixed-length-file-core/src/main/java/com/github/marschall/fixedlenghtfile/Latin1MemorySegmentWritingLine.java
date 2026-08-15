@@ -4,8 +4,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.lang.foreign.MemorySegment;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
 final class Latin1MemorySegmentWritingLine implements WritingLine {
   // TODO currently unlimited length, could benefit from slice()

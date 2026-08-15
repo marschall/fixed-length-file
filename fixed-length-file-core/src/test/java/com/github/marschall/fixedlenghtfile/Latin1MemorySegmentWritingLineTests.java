@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 
 class Latin1MemorySegmentWritingLineTests {
 
@@ -19,8 +21,6 @@ class Latin1MemorySegmentWritingLineTests {
     static final StringFieldDefinition FIELD1;
     static final StringFieldDefinition FIELD2;
     static final StringFieldDefinition FIELD3;
-//    static final StringFieldDefinition FIELD4;
-//    static final StringFieldDefinition FIELD5;
     static final UnsignedFieldDefinition FIELD6;
     static final UnsignedFieldDefinition FIELD7;
 
@@ -29,25 +29,19 @@ class Latin1MemorySegmentWritingLineTests {
       FIELD1 = new StringFieldDefinition("FIELD-1", 6, 0);
       FIELD2 = new StringFieldDefinition("FIELD-2", 6, FIELD1.getOffset() + FIELD1.getLength());
       FIELD3 = new StringFieldDefinition("FIELD-3", 6, FIELD2.getOffset() + FIELD1.getLength());
-//      FIELD4 = new StringFieldDefinition("FIELD-4", 6, FIELD3.getOffset() + FIELD3.getLength());
-//      FIELD5 = new StringFieldDefinition("FIELD-5", 6, FIELD4.getOffset() + FIELD4.getLength());
       FIELD6 = new UnsignedFieldDefinition("FIELD-6", 2, FIELD3.getOffset() + FIELD3.getLength());
       FIELD7 = new UnsignedFieldDefinition("FIELD-7", 2, FIELD6.getOffset() + FIELD6.getLength());
+    }
+
+    static RecordDefinition definition() {
+      return new FixedLengthRecordDefinition("R", List.of(FIELD1, FIELD2, FIELD3, FIELD6, FIELD7));
     }
 
   }
 
   @Test
   void writeFirstLine() throws IOException {
-    FileDefinition fileDefinition = FileDefinition.builder()
-        .defineRecordType("R", binder -> {
-          binder.bind(R.FIELD1);
-          binder.bind(R.FIELD2);
-          binder.bind(R.FIELD3);
-          binder.bind(R.FIELD6);
-          binder.bind(R.FIELD7);
-        })
-        .build();
+    FileDefinition fileDefinition = new FileDefinition(List.of(R.definition()));
 
     var recordDefinition = fileDefinition.getRecordDefinition("R");
 

@@ -81,7 +81,7 @@ public class ConfigurationParser {
           String id = this.idText.evaluateExpression(field, String.class);
           String name = this.nameText.evaluateExpression(field, String.class);
           String description = this.descriptionText.evaluateExpression(field, String.class);
-          Integer length = this.lengthText.evaluateExpression(field, Integer.class);
+          int length = this.lengthText.evaluateExpression(field, Integer.class);
           DataType dataType = mapDataType(field);
           int offset;
           if (currentFields.isEmpty()) {
@@ -90,7 +90,7 @@ public class ConfigurationParser {
             Field previous = currentFields.getLast();
             offset = previous.offset() + previous.length();
           }
-          Field newField = new Field(id, name, length, offset, dataType, description);
+          Field newField = new Field(id, name, offset, length, dataType, description);
           if (!currentFields.isEmpty() && currentFields.getLast().id().equals(id)) {
             // multiple final versions, overwrite the previous one
             currentFields.set(currentFields.size() - 1, newField);

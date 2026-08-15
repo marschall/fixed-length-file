@@ -6,30 +6,15 @@ public abstract sealed class FieldDefinition {
 
   private final String name;
 
-  private final short length;
-  
-  private final short offset;
-
-  FieldDefinition(String name, int length, int offset) {
-    if (length <= 0) {
-      throw new IllegalArgumentException("length must be positive");
-    }
+  FieldDefinition(String name) {
     this.name = Objects.requireNonNull(name, "name");
-    this.length = Utils.toPositiveShortExact(length);
-    this.offset = Utils.toPositiveShortExact(offset);
-  }
-
-  int getLength() {
-    return this.length;
-  }
-  
-  int getOffset() {
-    return this.offset;
   }
 
   String getName() {
     return this.name;
   }
+
+  abstract int getLength();
 
   @Override
   public boolean equals(Object obj) {
@@ -56,28 +41,80 @@ public abstract sealed class FieldDefinition {
     return this.name;
   }
 
-  public static final class StringFieldDefinition extends FieldDefinition {
+  public static abstract sealed class OffsetFieldDefinition extends FieldDefinition {
 
-    public StringFieldDefinition(String name, int length, int offset) {
-      super(name, length, offset);
+    private final short length;
+
+    private final short offset;
+
+    OffsetFieldDefinition(String name, int length, int offset) {
+      super(name);
+      if (length <= 0) {
+        throw new IllegalArgumentException("length must be positive");
+      }
+      this.length = Utils.toPositiveShortExact(length);
+      this.offset = Utils.toPositiveShortExact(offset);
+    }
+
+    int getLength() {
+      return this.length;
+    }
+
+    int getOffset() {
+      return this.offset;
+    }
+
+    public static final class StringFieldDefinition extends OffsetFieldDefinition {
+
+      public StringFieldDefinition(String name, int length, int offset) {
+        super(name, length, offset);
+      }
+
+    }
+
+    public static final class UnsignedFieldDefinition extends OffsetFieldDefinition {
+
+      public UnsignedFieldDefinition(String name, int length, int offset) {
+        super(name, length, offset);
+      }
+
+    }
+
+    public static final class SignedFieldDefinition extends OffsetFieldDefinition {
+
+      public SignedFieldDefinition(String name, int length, int offset) {
+        super(name, length, offset);
+      }
+
+    }
+  }
+  
+  
+  public static final class SegmentFieldDefinition<F extends OffsetFieldDefinition> extends FieldDefinition {
+
+    private final F delegate;
+    private final short segmentIndex;
+
+    public SegmentFieldDefinition(int segmentIndex, F delegate) {
+      super(delegate.getName());
+      this.delegate = delegate;
+      this.segmentIndex = Utils.toPositiveShortExact(segmentIndex);
+    }
+
+    public int getSegmentIndex() {
+      return this.segmentIndex;
+    }
+    
+    @Override
+    int getLength() {
+      return this.delegate.getLength();
+    }
+
+    public F getDelegate() {
+      return this.delegate;
     }
 
   }
 
-  public static final class UnsignedFieldDefinition extends FieldDefinition {
-
-    public UnsignedFieldDefinition(String name, int length, int offset) {
-      super(name, length, offset);
-    }
-
-  }
-
-  public static final class SignedFieldDefinition extends FieldDefinition {
-
-    public SignedFieldDefinition(String name, int length, int offset) {
-      super(name, length, offset);
-    }
-
-  }
 
 }

@@ -9,12 +9,14 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 
 class WithLevelLatin1MemorySegmentReadingLineTests {
 
@@ -36,6 +38,10 @@ class WithLevelLatin1MemorySegmentReadingLineTests {
       EXPONENT_FIELD = new UnsignedFieldDefinition("EXPONENT-FIELD", 1, AMOUNT_FIELD.getOffset() + AMOUNT_FIELD.getLength());
     }
 
+    static RecordDefinition definition() {
+      return new FixedLengthRecordDefinition("R", List.of(TYPE, DATE_FIELD, TIME_FIELD6, TIME_FIELD8, AMOUNT_FIELD, EXPONENT_FIELD));
+    }
+
   }
 
   private FixedLengthFileParser parser;
@@ -51,25 +57,16 @@ class WithLevelLatin1MemorySegmentReadingLineTests {
 
     var path = Path.of("src/test/resources/sample_high_level_types");
 
-    FileDefinition highLevelDefinition = FileDefinition.builder()
-        .defineRecordType("R", binder -> {
-          binder.bind(R.TYPE);
-          binder.bind(R.DATE_FIELD);
-          binder.bind(R.TIME_FIELD6);
-          binder.bind(R.TIME_FIELD8);
-          binder.bind(R.AMOUNT_FIELD);
-          binder.bind(R.EXPONENT_FIELD);
-        })
-        .build();
+    FileDefinition highLevelDefinition = new FileDefinition(List.of(R.definition()));
 
     this.parser.parseFile(highLevelDefinition, path, file -> {
       file.parseFile((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         assertEquals(0, recordNumber, "record number");
 
-        assertEquals(LocalDate.of(2026, 8, 9), R.DATE_FIELD);
-        assertEquals(LocalTime.of(20, 52, 13), R.TIME_FIELD6);
-        assertEquals(LocalTime.of(20, 52, 14, 560_000_000), R.TIME_FIELD8);
+        assertEquals(LocalDate.of(2026, 8, 9), line.readLocalDate(R.DATE_FIELD));
+        assertEquals(LocalTime.of(20, 52, 13), line.readLocalTime(R.TIME_FIELD6));
+        assertEquals(LocalTime.of(20, 52, 14, 560_000_000), line.readLocalTime(R.TIME_FIELD8));
 
         assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13)), line.readLocalDateTime(R.DATE_FIELD, R.TIME_FIELD6));
         assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000)), line.readLocalDateTime(R.DATE_FIELD, R.TIME_FIELD8));

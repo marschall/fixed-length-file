@@ -45,6 +45,11 @@ public abstract sealed class RecordDefinitionFragment {
     public boolean hasSegments() {
       return !this.segments.isEmpty();
     }
+    
+    @Override
+    public String toString() {
+      return this.name;
+    }
 
   }
 

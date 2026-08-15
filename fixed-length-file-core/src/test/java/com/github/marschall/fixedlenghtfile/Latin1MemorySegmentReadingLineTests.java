@@ -7,14 +7,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openjdk.jol.info.ClassLayout;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 
 class Latin1MemorySegmentReadingLineTests {
 
@@ -40,6 +42,10 @@ class Latin1MemorySegmentReadingLineTests {
       FIELD7 = new UnsignedFieldDefinition("FIELD-7", 2, FIELD6.getOffset() + FIELD6.getLength());
     }
 
+    static RecordDefinition definition() {
+      return new FixedLengthRecordDefinition("R", List.of(TYPE, FIELD1, FIELD2, FIELD3, FIELD4, FIELD5, FIELD6));
+    }
+
   }
 
   private FixedLengthFileParser parser;
@@ -47,17 +53,7 @@ class Latin1MemorySegmentReadingLineTests {
 
   @BeforeEach
   void setUp() {
-    this.fileDefinition = FileDefinition.builder()
-        .defineRecordType("R", binder -> {
-          binder.bind(R.TYPE);
-          binder.bind(R.FIELD1);
-          binder.bind(R.FIELD2);
-          binder.bind(R.FIELD3);
-          binder.bind(R.FIELD4);
-          binder.bind(R.FIELD5);
-          binder.bind(R.FIELD6);
-        })
-        .build();
+    this.fileDefinition = new FileDefinition(List.of(R.definition()));
 
     this.parser = new FixedLengthFileParser();
   }
@@ -78,12 +74,12 @@ class Latin1MemorySegmentReadingLineTests {
       file.parseFile((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         if (recordNumber == 0) {
-          assertEquals("Fi\u00E9ld1", R.FIELD1);
-          assertEquals("Fi\u00E9ld", R.FIELD2);
-          assertEquals("i\u00E9ld3", R.FIELD3);
-          assertEquals("\u00E9l", R.FIELD4);
-          assertSame("", R.FIELD5);
-          assertEquals(12, R.FIELD6);
+          assertEquals("Fi\u00E9ld1", line.readTrimmedString(R.FIELD1));
+          assertEquals("Fi\u00E9ld", line.readTrimmedString(R.FIELD2));
+          assertEquals("i\u00E9ld3", line.readTrimmedString(R.FIELD3));
+          assertEquals("\u00E9l", line.readTrimmedString(R.FIELD4));
+          assertSame("", line.readTrimmedString(R.FIELD5));
+          assertEquals(12, line.readUnsignedInt(R.FIELD6));
 
           String content;
           try {
@@ -95,12 +91,12 @@ class Latin1MemorySegmentReadingLineTests {
           assertEquals("RFi\u00E9ld1Fi\u00E9ld  i\u00E9ld3  \u00E9l        12", content);
 
         } else if (recordNumber == 1) {
-          assertEquals("Fi\u00E9ld2", R.FIELD1);
-          assertEquals("Fi\u00E9l", R.FIELD2);
-          assertEquals("\u00E9ld4", R.FIELD3);
-          assertEquals("\u00E9ld", R.FIELD4);
-          assertSame("", R.FIELD5);
-          assertEquals(34, R.FIELD6);
+          assertEquals("Fi\u00E9ld2", line.readTrimmedString(R.FIELD1));
+          assertEquals("Fi\u00E9l", line.readTrimmedString(R.FIELD2));
+          assertEquals("\u00E9ld4", line.readTrimmedString(R.FIELD3));
+          assertEquals("\u00E9ld", line.readTrimmedString(R.FIELD4));
+          assertSame("", line.readTrimmedString(R.FIELD5));
+          assertEquals(34, line.readUnsignedInt(R.FIELD6));
 
           String content;
           try {

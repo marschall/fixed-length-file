@@ -79,9 +79,9 @@ public class ConfigurationGenerator {
 
   private static ClassName getClassName(DataType dataType) {
     return switch (dataType) {
-      case CHAR -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "StringFieldDefinition");
-      case NUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "UnsignedFieldDefinition");
-      case SNUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "SignedFieldDefinition");
+      case CHAR -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "StringFieldDefinition");
+      case NUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "UnsignedFieldDefinition");
+      case SNUM -> ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "SignedFieldDefinition");
     };
   }
 

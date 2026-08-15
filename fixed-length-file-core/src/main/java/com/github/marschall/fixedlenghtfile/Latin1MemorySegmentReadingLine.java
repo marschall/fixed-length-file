@@ -13,8 +13,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.StringFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
 abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
   permits FixedLatin1MemorySegmentReadingLine, SegmentedLatin1MemorySegmentReadingLine {
