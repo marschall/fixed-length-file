@@ -26,6 +26,10 @@ class FixedLengthFileParserTests {
 
   static final class SampleWithRecordType {
 
+    static FileDefinition definition() {
+      return new FileDefinition(List.of(H.definition(), R.definition(), F.definition()));
+    }
+
     static final class H {
 
       static final StringFieldDefinition TYPE;
@@ -127,7 +131,7 @@ class FixedLengthFileParserTests {
   void sampleWithRecordTypes() throws IOException {
     Path path = Path.of("src/test/resources/sample_with_record_types.txt");
 
-    FileDefinition fileDefinition = new FileDefinition(List.of(H.definition(), R.definition(), F.definition()));
+    FileDefinition fileDefinition = SampleWithRecordType.definition();
 
     RecordDefinition headerDefinition = fileDefinition.getRecordDefinition("H");
     assertEquals(2, headerDefinition.getMaximumLength());

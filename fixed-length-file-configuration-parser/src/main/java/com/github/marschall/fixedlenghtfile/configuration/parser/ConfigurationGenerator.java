@@ -1,13 +1,17 @@
 package com.github.marschall.fixedlenghtfile.configuration.parser;
 
+import static java.util.stream.Collectors.joining;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
@@ -21,8 +25,8 @@ import com.palantir.javapoet.FieldSpec;
 import com.palantir.javapoet.JavaFile;
 import com.palantir.javapoet.MethodSpec;
 import com.palantir.javapoet.ParameterizedTypeName;
-import com.palantir.javapoet.TypeSpec;
 import com.palantir.javapoet.TypeName;
+import com.palantir.javapoet.TypeSpec;
 
 public class ConfigurationGenerator {
   
@@ -30,6 +34,12 @@ public class ConfigurationGenerator {
   private static final ClassName UNSIGNED_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "UnsignedFieldDefinition");
   private static final ClassName STRING_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "OffsetFieldDefinition", "StringFieldDefinition");
   private static final ClassName SEGMENT_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FieldDefinition", "SegmentFieldDefinition");
+  private static final ClassName FIXED_LENGTH_RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "RecordDefinition", "FixedLengthRecordDefinition");
+  private static final ClassName SEGMENTED_RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "RecordDefinition", "SegmentedRecordDefinition");
+  private static final ClassName RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "RecordDefinition");
+  private static final ClassName SEGMENT_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "RecordDefinition", "SegmentDefinition");
+  private static final ClassName FILE_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FileDefinition");
+  private static final ClassName LIST = ClassName.get("java.util", "List");
 
   public void generateTo(InterfaceVersion currentVersion, Set<String> interestingRecordTypes, Path interfacePath, Path outputDirectory, String packageName)
       throws XPathExpressionException, ParserConfigurationException, SAXException, IOException {
@@ -51,31 +61,88 @@ public class ConfigurationGenerator {
         FieldSpec fieldSpec = buildFieldSpec(field);
         recordSpecBuilder.addField(fieldSpec);
       }
-      MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
-          .returns(ClassName.get("com.github.marschall.fixedlenghtfile", "RecordDefinition"))
-          .addModifiers(PUBLIC, STATIC)
-          .addStatement("return null");
-      recordSpecBuilder.addMethod(definitionBuilder.build());
+      addRecordDefinitionMethod(recordSpecBuilder, recordDefinition);
+      
       if (recordDefinition.hasSegments()) {
-        int segmentIndex = 1;
-        for (SegmentDefinition segment : recordDefinition.getSegments()) {
-          TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + (segmentIndex + 1)))
-                  .addModifiers(PUBLIC, STATIC, FINAL);
-          for (Field field : segment.getFields()) {
-            FieldSpec fieldSpec = buildSegmentFieldSpec(segmentIndex, field);
-            segmentSpecBuilder.addField(fieldSpec);
-          }
-          recordSpecBuilder.addType(segmentSpecBuilder.build());
-          segmentIndex += 1;
-        }
+        addSegments(recordDefinition, interfaceDefinitionClassName, recordSpecBuilder);
       }
       constantContainerBuilder.addType(recordSpecBuilder.build());
     }
+    addFileDefinitionMethod(constantContainerBuilder, recordDefintions);
 
     JavaFile javaFile = JavaFile.builder(packageName, constantContainerBuilder.build())
         .build();
 
     javaFile.writeToPath(outputDirectory);
+  }
+
+  private void addRecordDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition) {
+    String fieldList = recordDefinition.getFields().stream()
+        .map(Field::id)
+        .collect(joining(", "));
+    MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
+        .returns(RECORD_DEFINITION)
+        .addModifiers(PUBLIC, STATIC);
+    if (recordDefinition.hasSegments()) {
+      String segmentDefinitions = IntStream.rangeClosed(1, recordDefinition.getSegments().size())
+          .mapToObj(i -> "Segment" + i + ".definition()")
+          .collect(joining(", "));
+      definitionBuilder.addStatement("return new $T($S, $T.of(" + fieldList + "), $T.of(" + segmentDefinitions + "))", SEGMENTED_RECORD_DEFINITION, recordDefinition.getName(), LIST, LIST);
+    } else {
+      definitionBuilder.addStatement("return new $T($S, $T.of(" + fieldList + "))", FIXED_LENGTH_RECORD_DEFINITION, recordDefinition.getName(), LIST);
+    }
+    recordSpecBuilder.addMethod(definitionBuilder.build());
+  }
+  
+  private void addFileDefinitionMethod(TypeSpec.Builder constantContainerBuilder, List<RecordDefinition> recordDefintions) {
+    String recordDefinitionList = recordDefintions.stream()
+        .map(RecordDefinition::getName)
+        .map(recordName -> recordName + ".definition()")
+        .collect(joining(", "));
+    MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
+        .returns(FILE_DEFINITION)
+        .addModifiers(PUBLIC, STATIC)
+        .addStatement("return new $T($T.of(" + recordDefinitionList + "))", FILE_DEFINITION, LIST);
+    constantContainerBuilder.addMethod(definitionBuilder.build());
+  }
+  
+  private void addSegmentDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition, int segmentIndex, SegmentDefinition segmentDefinition, Map<String, String> segmentIndicatorMap) {
+    String fieldList = segmentDefinition.getFields().stream()
+        .map(Field::id)
+        .collect(joining(", "));
+    // TODO nicer model
+    String segmentIndicatorField = recordDefinition.getName() + "." + segmentIndicatorMap.get("SEG-IND-" + (segmentIndex + 1));
+    MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
+        .returns(SEGMENT_DEFINITION)
+        .addModifiers(PUBLIC, STATIC)
+        .addStatement("return new $T($L, " + segmentIndicatorField + ", $T.of(" + fieldList + "))", SEGMENT_DEFINITION, segmentIndex, LIST);
+    recordSpecBuilder.addMethod(definitionBuilder.build());
+  }
+
+  private void addSegments(RecordDefinition recordDefinition, ClassName interfaceDefinitionClassName, TypeSpec.Builder recordSpecBuilder) {
+    int segmentIndex = 0;
+    int segmentCount = recordDefinition.getSegments().size();
+    Map<String, String> segmentIndicatorMap = HashMap.newHashMap(segmentCount);
+    for (Field field : recordDefinition.getFields().reversed()) {
+      if (field.name().startsWith("SEG-IND-")) {
+        segmentIndicatorMap.put(field.name(), field.id());
+      }
+      if (segmentIndicatorMap.size() == segmentCount) {
+        // TODO
+        break;
+      }
+    }
+    for (SegmentDefinition segment : recordDefinition.getSegments()) {
+      TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + (segmentIndex + 1)))
+              .addModifiers(PUBLIC, STATIC, FINAL);
+      for (Field field : segment.getFields()) {
+        FieldSpec fieldSpec = buildSegmentFieldSpec(segmentIndex, field);
+        segmentSpecBuilder.addField(fieldSpec);
+      }
+      addSegmentDefinitionMethod(segmentSpecBuilder, recordDefinition, segmentIndex, segment, segmentIndicatorMap);
+      recordSpecBuilder.addType(segmentSpecBuilder.build());
+      segmentIndex += 1;
+    }
   }
 
   private static FieldSpec buildFieldSpec(Field field) {

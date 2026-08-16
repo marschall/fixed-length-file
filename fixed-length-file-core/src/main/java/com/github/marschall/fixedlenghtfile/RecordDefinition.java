@@ -24,9 +24,9 @@ public abstract sealed class RecordDefinition {
     return totalLength;
   }
 
-  abstract int getBaseLength();
+  public abstract int getBaseLength();
 
-  abstract int getMaximumLength();
+  public abstract int getMaximumLength();
 
   String getType() {
     return this.type;
@@ -47,12 +47,12 @@ public abstract sealed class RecordDefinition {
     }
 
     @Override
-    int getBaseLength() {
+    public int getBaseLength() {
       return this.length;
     }
 
     @Override
-    int getMaximumLength() {
+    public int getMaximumLength() {
       return this.length;
     }
 
@@ -82,12 +82,12 @@ public abstract sealed class RecordDefinition {
     }
 
     @Override
-    int getBaseLength() {
+    public int getBaseLength() {
       return this.baseLength;
     }
 
     @Override
-    int getMaximumLength() {
+    public int getMaximumLength() {
       return this.maxiumLength;
     }
 
@@ -106,7 +106,7 @@ public abstract sealed class RecordDefinition {
 
   }
 
-  static final class SegmentDefinition {
+  public static final class SegmentDefinition {
 
     private final StringFieldDefinition segmentIndicatorField;
 

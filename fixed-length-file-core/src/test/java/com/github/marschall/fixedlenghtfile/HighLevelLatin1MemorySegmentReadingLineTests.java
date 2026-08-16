@@ -18,7 +18,7 @@ import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 
-class WithLevelLatin1MemorySegmentReadingLineTests {
+class HighLevelLatin1MemorySegmentReadingLineTests {
 
   static final class R {
 
