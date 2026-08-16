@@ -2,10 +2,9 @@ package com.github.marschall.fixedlenghtfile;
 
 import java.lang.foreign.MemorySegment;
 
-import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
-
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
 
 final class FixedLatin1MemorySegmentReadingLine extends Latin1MemorySegmentReadingLine {
 
