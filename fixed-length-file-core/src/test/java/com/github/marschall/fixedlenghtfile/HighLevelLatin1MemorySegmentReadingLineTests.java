@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
@@ -44,13 +43,6 @@ class HighLevelLatin1MemorySegmentReadingLineTests {
 
   }
 
-  private FixedLengthFileParser parser;
-
-  @BeforeEach
-  void setUp() {
-    this.parser = new FixedLengthFileParser();
-  }
-
 
   @Test
   void readHighLevelTypes() throws IOException {
@@ -59,7 +51,7 @@ class HighLevelLatin1MemorySegmentReadingLineTests {
 
     FileDefinition highLevelDefinition = new FileDefinition(List.of(R.definition()));
 
-    this.parser.parseFile(highLevelDefinition, path, file -> {
+    FixedLengthFileParser.parseFile(highLevelDefinition, path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         assertEquals(0, recordNumber, "record number");

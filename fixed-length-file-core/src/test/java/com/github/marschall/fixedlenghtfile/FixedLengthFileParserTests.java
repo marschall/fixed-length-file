@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
@@ -120,13 +119,6 @@ class FixedLengthFileParserTests {
 
   }
 
-  private FixedLengthFileParser parser;
-
-  @BeforeEach
-  void setUp() {
-    this.parser = new FixedLengthFileParser();
-  }
-
   @Test
   void sampleWithRecordTypes() throws IOException {
     Path path = Path.of("src/test/resources/sample_with_record_types.txt");
@@ -145,7 +137,7 @@ class FixedLengthFileParserTests {
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
     List<Integer> expectedLenghts = List.of(2, 13, 10, 13, 2);
-    this.parser.parseFile(fileDefinition, path, file -> {
+    FixedLengthFileParser.parseFile(fileDefinition, path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals(expectedRecordNumber.getAndIncrement(), recordNumber, "record number");
         assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");

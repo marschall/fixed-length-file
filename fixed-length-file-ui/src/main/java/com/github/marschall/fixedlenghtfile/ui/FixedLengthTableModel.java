@@ -71,6 +71,7 @@ public class FixedLengthTableModel extends AbstractTableModel {
     LineLocator locator = this.lines.get(rowIndex);
     ReadingLine line = this.file.readLine(locator);
     ColumnModel model = this.columnModelList.get(columnIndex);
+    // TODO should probably be cached
     return model.readValueFrom(line);
   }
 
