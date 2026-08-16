@@ -146,7 +146,7 @@ class FixedLengthFileParserTests {
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
     List<Integer> expectedLenghts = List.of(2, 13, 10, 13, 2);
     this.parser.parseFile(fileDefinition, path, file -> {
-      file.parseFile((recordType, recordNumber, line) -> {
+      file.parseLines((recordType, recordNumber, line) -> {
         assertEquals(expectedRecordNumber.getAndIncrement(), recordNumber, "record number");
         assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");
         assertEquals(expectedLenghts.get(recordNumber), line.getLength(), "line length");

@@ -71,7 +71,7 @@ class Latin1MemorySegmentReadingLineTests {
     var path = Path.of("src/test/resources/sample.txt");
 
     this.parser.parseFile(this.fileDefinition, path, file -> {
-      file.parseFile((recordType, recordNumber, line) -> {
+      file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         if (recordNumber == 0) {
           assertEquals("Fi\u00E9ld1", line.readTrimmedString(R.FIELD1));
@@ -120,7 +120,7 @@ class Latin1MemorySegmentReadingLineTests {
     var path = Path.of("src/test/resources/sample.txt");
 
     this.parser.parseFile(this.fileDefinition, path, file -> {
-      file.parseFile((_, _, line) -> {
+      file.parseLines((_, _, line) -> {
         ClassLayout layout = ClassLayout.parseInstance(line);
         System.out.println(layout.toPrintable());
       });

@@ -1,6 +1,7 @@
 package com.github.marschall.fixedlenghtfile.batch;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.nio.file.Path;
 
 import org.jspecify.annotations.Nullable;
@@ -11,19 +12,26 @@ import org.springframework.batch.infrastructure.item.file.ResourceAwareItemReade
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
+import com.github.marschall.fixedlenghtfile.FileDefinition;
+import com.github.marschall.fixedlenghtfile.FixedLengthFileParser;
 import com.github.marschall.fixedlenghtfile.ReadingLine;
+import com.github.marschall.fixedlenghtfile.StatefulFixedLengthFile;
 
 public class FixedLengthItemReader extends ItemStreamSupport implements ResourceAwareItemReaderItemStream<ReadingLine> {
 
   private static final String READ_COUNT = "read.count";
+  private static final String READ_POSITION = "read.position";
 
   private int currentItemCount = 0;
 
   private Resource resource;
 
+  private Arena arena;
+
+  private StatefulFixedLengthFile file;
+
   @Override
   public @Nullable ReadingLine read() throws Exception {
-    // TODO Auto-generated method stub
     currentItemCount++;
     return null;
   }
@@ -36,23 +44,18 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
   @Override
   public void open(ExecutionContext executionContext) throws ItemStreamException {
     Path path = this.getPath();
+    this.arena = Arena.ofShared();
+    FileDefinition fileDefinition = null;
+    try {
+      this.file = FixedLengthFileParser.parseFile(fileDefinition, path, this.arena);
+    } catch (IOException e) {
+      throw new ItemStreamException("could not open file: " + path, e);
+    }
+    long position = this.getInitialPosition(executionContext);
+    this.file.setCurrentPosition(position);
 
     int initialItemCount = getInitialItemCount(executionContext);
-
-    if (initialItemCount > 0) {
-      try {
-        jumpToItem(initialItemCount);
-      } catch (Exception e) {
-        throw new ItemStreamException("Could not move to stored position on restart", e);
-      }
-    }
-
     this.currentItemCount = initialItemCount;
-  }
-
-  private void jumpToItem(int initialItemCount) {
-    // TODO Auto-generated method stub
-    
   }
 
   private int getInitialItemCount(ExecutionContext executionContext) {
@@ -68,6 +71,19 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
       throw new IllegalStateException("itemCount must be positive: " + itemCount);
     }
     return itemCount;
+  }
+  
+  private long getInitialPosition(ExecutionContext executionContext) {
+    long position;
+    if (executionContext.containsKey(getExecutionContextKey(READ_POSITION))) {
+      position = executionContext.getLong(getExecutionContextKey(READ_POSITION));
+    } else {
+      position = 0L;
+    }
+    if (position < 0) {
+      throw new IllegalStateException("itemCount must be positive: " + position);
+    }
+    return position;
   }
 
   private Path getPath() {
@@ -91,13 +107,22 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
   @Override
   public void update(ExecutionContext executionContext) {
     executionContext.putInt(getExecutionContextKey(READ_COUNT), this.currentItemCount);
+    executionContext.putLong(getExecutionContextKey(READ_POSITION), this.file.getCurrentPosition());
   }
   
   @Override
   public void close() throws ItemStreamException {
-    // TODO Auto-generated method stub
-    ResourceAwareItemReaderItemStream.super.close();
+    try {
+      if (this.file != null) {
+        try {
+          this.file.close();
+        } catch (IOException e) {
+          throw new ItemStreamException("Could not clos file", e);
+        }
+      }
+    } finally {
+      this.arena.close();
+    }
   }
-
 
 }

@@ -60,7 +60,7 @@ class HighLevelLatin1MemorySegmentReadingLineTests {
     FileDefinition highLevelDefinition = new FileDefinition(List.of(R.definition()));
 
     this.parser.parseFile(highLevelDefinition, path, file -> {
-      file.parseFile((recordType, recordNumber, line) -> {
+      file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         assertEquals(0, recordNumber, "record number");
 

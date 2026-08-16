@@ -12,65 +12,57 @@ import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDe
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
 
-public final class FixedLengthFile {
-  
+public abstract sealed class FixedLengthFile
+  permits StatefulFixedLengthFile, StatelessFixedLengthFile {
+
   private final byte CR = 13;
   private final byte LF = 10;
 
   private final FileDefinition fileDefinition;
-  private final MemorySegment segment;
+  protected final MemorySegment segment;
   private final Map<String, RecordDefinition> recordDefinitionMap;
   private final int maximumPrefixLength;
 
-  FixedLengthFile(FileDefinition fileDefinition, MemorySegment segment) {
+  protected FixedLengthFile(FileDefinition fileDefinition, MemorySegment segment) {
     this.fileDefinition = fileDefinition;
     this.maximumPrefixLength = fileDefinition.getMaximumPrefixLength();
     this.recordDefinitionMap = fileDefinition.getRecordDefinitionMap();
     this.segment = segment;
   }
-  
-//  public int countLines(String recordType) {
-//    // TODO
-//    // TODO map record count of type to global record count
-//    // TODO safe offset 
-//    return 0;
-//  }
-//  
-//  public <T> T parseLine(RecordIdentifier identifier, LineMapper<T> mapper) {
-//    return mapper.map(null, null, null);
-//  }
-//  
-//  final class RecordIdentifier {
-//    
-//  }
 
-  public void parseFile(LineConsumer consumer) {
-    if (this.segment.byteSize() == 0) {
-      return;
+  //  public int countLines(String recordType) {
+  //    // TODO
+  //    // TODO map record count of type to global record count
+  //    // TODO safe offset 
+  //    return 0;
+  //  }
+  //  
+  //  public <T> T parseLine(RecordIdentifier identifier, LineMapper<T> mapper) {
+  //    return mapper.map(null, null, null);
+  //  }
+  //  
+  //  final class RecordIdentifier {
+  //    
+  //  }
+  
+  protected LineInformation preParseLine(long lineStart) {
+    RecordDefinition recordDefinition = determineRecordDefinition(lineStart);
+    return switch (recordDefinition) {
+    case FixedLengthRecordDefinition fixed -> {
+      yield new LineInformation(fixed, determineRecordLength(lineStart, fixed), null);
     }
-    long position = 0;
-    int recordNumber = 0;
-    while (position < this.segment.byteSize()) {
-      RecordDefinition recordDefinition = determineRecordDefinition(position);
-      int recordLength = determineRecordLength(position, recordDefinition);
-      MemorySegment lineSegment = this.segment.asSlice(position, recordLength);
-      Latin1MemorySegmentReadingLine line = switch (recordDefinition) {
-        case FixedLengthRecordDefinition _ ->  {
-          yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
-        }
-        case SegmentedRecordDefinition segmented -> {
-          // TODO read only once
-          SegmentOffsets segmentOffsets = readSegmentOffsets(position, segmented);
-          yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, segmentOffsets);
-        }
-      };
-      consumer.accept(recordDefinition.getType(), recordNumber, line);
-      recordNumber += 1;
-      position = this.advanceBeyondNewline(position + recordLength);
+    case SegmentedRecordDefinition segmented -> {
+      SegmentOffsets segmentOffsets = readSegmentOffsets(lineStart, segmented);
+      yield new LineInformation(segmented, determineRecordLength(lineStart, segmented, segmentOffsets), segmentOffsets);
     }
+    };
   }
 
-  private long advanceBeyondNewline(long position) {
+  record LineInformation(RecordDefinition recordDefinition, int recordLength, SegmentOffsets segmentOffsets) {
+
+  }
+
+  protected long advanceBeyondNewline(long position) {
     if (this.segment.byteSize() == position) {
       return position;
     }
@@ -88,11 +80,11 @@ public final class FixedLengthFile {
     throw new FileFormatException("expected newline at: " + position);
   }
 
-  private RecordDefinition determineRecordDefinition(long position) {
-    if (position + this.maximumPrefixLength >= this.segment.byteSize()) {
+  protected RecordDefinition determineRecordDefinition(long lineStart) {
+    if (lineStart + this.maximumPrefixLength >= this.segment.byteSize()) {
       throw new FileFormatException("expected a minium of " + this.maximumPrefixLength + " to determine record type");
     }
-    byte[] characters = this.segment.asSlice(position, this.maximumPrefixLength).toArray(JAVA_BYTE);
+    byte[] characters = this.segment.asSlice(lineStart, this.maximumPrefixLength).toArray(JAVA_BYTE);
     String prefix = new String(characters, ISO_8859_1);
     // first try direct lookup
     RecordDefinition recordDefinition = this.fileDefinition.getRecordDefinition(prefix);
@@ -104,13 +96,14 @@ public final class FixedLengthFile {
     for (Map.Entry<String, RecordDefinition> entry : this.recordDefinitionMap.entrySet()) {
       String recordPrefix = entry.getKey();
       if (prefix.startsWith(recordPrefix)) {
+        // TODO put?
         return entry.getValue();
       }
     }
     throw new FileFormatException("unknown record type " + prefix);
   }
-  
-  private SegmentOffsets readSegmentOffsets(long lineStart, SegmentedRecordDefinition recordDefinition) {
+
+  protected SegmentOffsets readSegmentOffsets(long lineStart, SegmentedRecordDefinition recordDefinition) {
     List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
     int offset = recordDefinition.getBaseLength();
     var segmentOffsets = new SegmentOffsets(segmentDefinitions.size());
@@ -135,21 +128,20 @@ public final class FixedLengthFile {
     }
     return segmentOffsets;
   }
-  
+
   private SegmentIndicator readSegmentIndicator(long lineStart, SegmentedRecordDefinition recordDefinition, StringFieldDefinition segmentIndicatorFieldDefinition) {
     byte b = this.segment.getAtIndex(JAVA_BYTE, lineStart + segmentIndicatorFieldDefinition.getOffset());
     char c = (char) Byte.toUnsignedInt(b);
     return switch (c) {
-      case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
-      case SegmentIndicator.SPACES_VALUE -> SegmentIndicator.SPACES;
-      case SegmentIndicator.ABSENT_VALUE -> SegmentIndicator.ABSENT;
-      default -> throw new FileFormatException("Unexpected segment indicator: " + c);
+    case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
+    case SegmentIndicator.SPACES_VALUE -> SegmentIndicator.SPACES;
+    case SegmentIndicator.ABSENT_VALUE -> SegmentIndicator.ABSENT;
+    default -> throw new FileFormatException("Unexpected segment indicator: " + c);
     };
   }
-  
-  private int computeRecordLength(long lineStart, SegmentedRecordDefinition recordDefinition) {
+
+  private int computeRecordLength(long lineStart, SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
     int length = recordDefinition.getBaseLength();
-    var segmentOffsets = readSegmentOffsets(lineStart, recordDefinition);
     List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
     for (int i = 0; i < segmentDefinitions.size(); i++) {
       var segmentDefinition = segmentDefinitions.get(i);
@@ -161,12 +153,13 @@ public final class FixedLengthFile {
     return length;
   }
   
-
-  private int determineRecordLength(long position, RecordDefinition recordDefinition) {
-    return switch (recordDefinition) {
-      case FixedLengthRecordDefinition fixed -> fixed.getMaximumLength();
-      case SegmentedRecordDefinition segmented -> computeRecordLength(position, segmented);
-    };
+  protected int determineRecordLength(long lineStart, FixedLengthRecordDefinition recordDefinition) {
+    return recordDefinition.getMaximumLength();
   }
+  
+  protected int determineRecordLength(long lineStart, SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
+    return computeRecordLength(lineStart, recordDefinition, segmentOffsets);
+  }
+
 
 }
