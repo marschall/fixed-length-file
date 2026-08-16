@@ -64,9 +64,11 @@ public abstract sealed class RecordDefinition {
     private final int maxiumLength;
     private final int baseRecordCount;
     private final List<SegmentDefinition> segmentDefinitions;
+    private final List<? extends OffsetFieldDefinition> fixedRecords;
 
     public SegmentedRecordDefinition(String type, List<? extends OffsetFieldDefinition> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
       super(type);
+      this.fixedRecords = fixedRecords;
       this.segmentDefinitions = segmentDefinitions;
       this.baseLength = computeLength(fixedRecords);
       this.maxiumLength = computeMaxiumLength(fixedRecords, segmentDefinitions);
@@ -91,8 +93,12 @@ public abstract sealed class RecordDefinition {
       return this.maxiumLength;
     }
 
-    List<SegmentDefinition> getSegmentDefinitions() {
+    public List<SegmentDefinition> getSegmentDefinitions() {
       return this.segmentDefinitions;
+    }
+
+    public List<? extends OffsetFieldDefinition> getFixedRecords() {
+      return this.fixedRecords;
     }
 
     
@@ -126,13 +132,17 @@ public abstract sealed class RecordDefinition {
     int getLength() {
       return this.length;
     }
-    
-    StringFieldDefinition getSegmentIndicatorField() {
+
+    public StringFieldDefinition getSegmentIndicatorField() {
       return this.segmentIndicatorField;
     }
 
     int getFieldCount() {
       return this.fields.size();
+    }
+
+    public List<SegmentFieldDefinition<?>> getFields() {
+      return this.fields;
     }
 
     @Override

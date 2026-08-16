@@ -20,20 +20,26 @@ public final class StatelessFixedLengthFile extends FixedLengthFile {
     while (position < this.segment.byteSize()) {
       LineInformation lineInformation = this.preParseLine(position);
       RecordDefinition recordDefinition = lineInformation.recordDefinition();
-      int recordLength = lineInformation.recordLength();
-      MemorySegment lineSegment = this.segment.asSlice(position, recordLength);
-      Latin1MemorySegmentReadingLine line = switch (recordDefinition) {
-        case FixedLengthRecordDefinition _ ->  {
-          yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
-        }
-        case SegmentedRecordDefinition _ -> {
-          yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
-        }
-      };
+      ReadingLine line = asLine(position, lineInformation, recordDefinition);
       consumer.accept(recordDefinition.getType(), recordNumber, line);
       recordNumber += 1;
-      position = this.advanceBeyondNewline(position + recordLength);
+      position = this.advanceBeyondNewline(position + lineInformation.recordLength());
     }
+  }
+  
+  protected ReadingLine readLine(long lineStart) {
+    LineInformation lineInformation = this.preParseLine(lineStart);
+    RecordDefinition recordDefinition = lineInformation.recordDefinition();
+    int recordLength = lineInformation.recordLength();
+    MemorySegment lineSegment = this.segment.asSlice(lineStart, recordLength);
+    return switch (recordDefinition) {
+      case FixedLengthRecordDefinition _ ->  {
+        yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
+      }
+      case SegmentedRecordDefinition _ -> {
+        yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
+      }
+    };
   }
 
 }

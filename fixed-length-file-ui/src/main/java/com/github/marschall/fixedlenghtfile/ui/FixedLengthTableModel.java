@@ -1,24 +1,38 @@
 package com.github.marschall.fixedlenghtfile.ui;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.swing.table.AbstractTableModel;
 
-import com.github.marschall.fixedlenghtfile.FixedLengthFile;
-import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
+import com.github.marschall.fixedlenghtfile.ReadingLine;
+import com.github.marschall.fixedlenghtfile.StatefulFixedLengthFile;
+import com.github.marschall.fixedlenghtfile.StatefulFixedLengthFile.LineLocator;
 
 public class FixedLengthTableModel extends AbstractTableModel {
 
-  private final SegmentedRecordDefinition recordDefintion;
   private final int columnCount;
   private int rowCount;
+  private List<ColumnModel> columnModelList;
+  private Map<String, Integer> columnModelMap;
+  private List<LineLocator> lines;
+  private StatefulFixedLengthFile file;
 
-  public FixedLengthTableModel(SegmentedRecordDefinition recordDefintion) {
-    this.recordDefintion = recordDefintion;
-    this.columnCount = recordDefintion.getTotalFieldCount();
+  public FixedLengthTableModel(List<ColumnModel> columnModelList) {
+    this.columnModelList = columnModelList;
+    this.columnModelMap = HashMap.newHashMap(columnModelList.size());
+    for (int i = 0; i < columnModelList.size(); i++) {
+      this.columnModelMap.put(columnModelList.get(i).getColumnName(), i);
+    }
+    this.columnCount = columnModelList.size();
     this.rowCount = 0;
   }
   
-  public void loadFile(int recordCount, FixedLengthFile file) {
-    this.rowCount = recordCount;
+  public void loadFile(StatefulFixedLengthFile file, List<LineLocator> lines) {
+    this.file = file;
+    this.rowCount = lines.size();
+    this.lines = lines;
     this.fireTableDataChanged();
   }
 
@@ -29,32 +43,35 @@ public class FixedLengthTableModel extends AbstractTableModel {
   
   @Override
   public String getColumnName(int column) {
-    // TODO Auto-generated method stub
-    return super.getColumnName(column);
+    return this.columnModelList.get(column).getColumnName();
   }
   
   @Override
   public int findColumn(String columnName) {
-    // TODO Auto-generated method stub
-    return super.findColumn(columnName);
+    Integer columnIndex = this.columnModelMap.get(columnName);
+    if (columnIndex != null) {
+      return columnIndex;
+    } else {
+      return -1;
+    }
   }
   
   @Override
   public Class<?> getColumnClass(int columnIndex) {
-    // TODO Auto-generated method stub
-    return super.getColumnClass(columnIndex);
+    return this.columnModelList.get(columnIndex).getColumnClass();
   }
 
   @Override
   public int getColumnCount() {
-    // TODO Auto-generated method stub
-    return this.getColumnCount();
+    return this.columnCount;
   }
 
   @Override
   public Object getValueAt(int rowIndex, int columnIndex) {
-    // TODO Auto-generated method stub
-    return null;
+    LineLocator locator = this.lines.get(rowIndex);
+    ReadingLine line = this.file.readLine(locator);
+    ColumnModel model = this.columnModelList.get(columnIndex);
+    return model.readValueFrom(line);
   }
 
 }

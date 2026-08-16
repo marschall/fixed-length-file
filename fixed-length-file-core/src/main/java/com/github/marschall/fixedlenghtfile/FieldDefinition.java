@@ -10,7 +10,7 @@ public abstract sealed class FieldDefinition {
     this.name = Objects.requireNonNull(name, "name");
   }
 
-  String getName() {
+  public String getName() {
     return this.name;
   }
 
@@ -56,7 +56,7 @@ public abstract sealed class FieldDefinition {
       this.offset = Utils.toPositiveShortExact(offset);
     }
 
-    int getLength() {
+    public int getLength() {
       return this.length;
     }
 

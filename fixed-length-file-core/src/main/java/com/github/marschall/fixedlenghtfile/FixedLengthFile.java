@@ -30,36 +30,35 @@ public abstract sealed class FixedLengthFile
     this.segment = segment;
   }
 
-  //  public int countLines(String recordType) {
-  //    // TODO
-  //    // TODO map record count of type to global record count
-  //    // TODO safe offset 
-  //    return 0;
-  //  }
-  //  
-  //  public <T> T parseLine(RecordIdentifier identifier, LineMapper<T> mapper) {
-  //    return mapper.map(null, null, null);
-  //  }
-  //  
-  //  final class RecordIdentifier {
-  //    
-  //  }
-  
   protected LineInformation preParseLine(long lineStart) {
     RecordDefinition recordDefinition = determineRecordDefinition(lineStart);
     return switch (recordDefinition) {
-    case FixedLengthRecordDefinition fixed -> {
-      yield new LineInformation(fixed, determineRecordLength(lineStart, fixed), null);
-    }
-    case SegmentedRecordDefinition segmented -> {
-      SegmentOffsets segmentOffsets = readSegmentOffsets(lineStart, segmented);
-      yield new LineInformation(segmented, determineRecordLength(lineStart, segmented, segmentOffsets), segmentOffsets);
-    }
+      case FixedLengthRecordDefinition fixed -> {
+        yield new LineInformation(fixed, determineRecordLength(lineStart, fixed), null);
+      }
+      case SegmentedRecordDefinition segmented -> {
+        SegmentOffsets segmentOffsets = readSegmentOffsets(lineStart, segmented);
+        yield new LineInformation(segmented, determineRecordLength(lineStart, segmented, segmentOffsets), segmentOffsets);
+      }
     };
   }
 
   record LineInformation(RecordDefinition recordDefinition, int recordLength, SegmentOffsets segmentOffsets) {
 
+  }
+
+  
+  protected ReadingLine asLine(long lineStart, LineInformation lineInformation, RecordDefinition recordDefinition) {
+    int recordLength = lineInformation.recordLength();
+    MemorySegment lineSegment = this.segment.asSlice(lineStart, recordLength);
+    return switch (recordDefinition) {
+      case FixedLengthRecordDefinition _ ->  {
+        yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
+      }
+      case SegmentedRecordDefinition _ -> {
+        yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
+      }
+    };
   }
 
   protected long advanceBeyondNewline(long position) {
