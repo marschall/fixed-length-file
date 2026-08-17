@@ -131,6 +131,7 @@ class Latin1MemorySegmentReadingLineTests {
       });
     });
   }
+
   @Test
   void asReader_read() throws IOException {
     var path = Path.of("src/test/resources/sample.txt");

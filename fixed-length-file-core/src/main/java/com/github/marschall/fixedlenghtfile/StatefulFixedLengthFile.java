@@ -27,8 +27,10 @@ public final class StatefulFixedLengthFile extends FixedLengthFile implements Cl
     while (localPosition < this.segment.byteSize()) {
       LineInformation lineInformation = this.preParseLine(localPosition);
       int recordLength = lineInformation.recordLength();
-      locators.add(new LineLocator(localPosition, lineInformation));
-      this.position = this.advanceBeyondNewline(this.position + recordLength);
+      if (lineInformation.recordDefinition().getType().equals(recordType)) {
+        locators.add(new LineLocator(localPosition, lineInformation));
+      }
+      localPosition = this.advanceBeyondNewline(localPosition + recordLength);
     }
     return locators;
   }
