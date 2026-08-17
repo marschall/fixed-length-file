@@ -32,7 +32,7 @@ class InterfaceDefinition267Tests {
     var recordDefintion = this.definition.getRecordDefinition("KT");
     SegmentedRecordDefinition kt = assertInstanceOf(SegmentedRecordDefinition.class, recordDefintion);
     assertEquals(47 + 109 + 741 + 14 + 296 + 35 + 248 + 187 + 526 + 116 + 184 + 355 + 8, kt.getBaseLength());
-//    assertEquals(155, kt.getMaximumLength());
+    assertEquals(4525, kt.getMaximumLength());
   }
   
   @Test
