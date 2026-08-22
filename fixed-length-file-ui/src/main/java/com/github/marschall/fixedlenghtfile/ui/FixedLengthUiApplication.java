@@ -2,17 +2,27 @@ package com.github.marschall.fixedlenghtfile.ui;
 
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableColumn;
 
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.SignedFieldDefinition;
@@ -41,20 +51,33 @@ public class FixedLengthUiApplication {
   }
 
   JPanel createPanel() {
-    JPanel panel = new JPanel(new GridLayout(1,0));
+    var panel = new JPanel(new GridLayout(1,0));
 
-    JTable table = new JTable();
+    var table = new JTable();
     table.setPreferredScrollableViewportSize(new Dimension(500, 70));
     table.setFillsViewportHeight(true);
+    table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
     this.dataModel = new FixedLengthTableModel(this.columnModels);
     table.setModel(this.dataModel);
 
-    JScrollPane scrollPane = new JScrollPane(table);
+    setColumnWidths(table);
+
+    var scrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     panel.add(scrollPane);
 
     return panel;
   }
-  
+
+  private void setColumnWidths(JTable table) {
+    var tableFontMetrics = table.getFontMetrics(table.getFont());
+    for (int i = 0; i < this.columnModels.size(); i++) {
+      ColumnModel columnModel = this.columnModels.get(i);
+      TableColumn column = table.getColumnModel().getColumn(i);
+      int stringWidth = tableFontMetrics.stringWidth(columnModel.getColumnName());
+      column.setPreferredWidth(stringWidth + 10);
+    }
+  }
+
   void loadFile(Path path) {
     Thread loader = new Thread(() -> {
       Arena arena = Arena.ofAuto();
@@ -106,7 +129,7 @@ public class FixedLengthUiApplication {
       }
     };
   }
-  
+
   private static ValueAccessor getAccessor(OffsetFieldDefinition fieldDefinition) {
     return switch (fieldDefinition) {
       case SignedFieldDefinition _ -> {
@@ -124,7 +147,7 @@ public class FixedLengthUiApplication {
       }
     };
   }
-  
+
   private static ValueAccessor getAccessor(StringFieldDefinition segmentIndicatorField, SegmentFieldDefinition<?> segmentFieldDefinition) {
     OffsetFieldDefinition delegateFieldDefinition = segmentFieldDefinition.getDelegate();
     return switch (delegateFieldDefinition) {
@@ -167,13 +190,44 @@ public class FixedLengthUiApplication {
     };
   }
 
+  private JMenuBar createMenuBar(JFrame frame) {
+    var menuBar = new JMenuBar();
+
+    var fileMenu = new JMenu("File");
+    fileMenu.setMnemonic(KeyEvent.VK_F);
+
+    var openItem = new JMenuItem("Open", KeyEvent.VK_O);
+    openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+    openItem.addActionListener(event -> this.openFile(event, frame));
+    fileMenu.add(openItem);
+
+    menuBar.add(fileMenu);
+
+    return menuBar;
+  }
+
+  void openFile(ActionEvent event, JFrame parent) {
+    var fileChooser = new JFileChooser();
+    fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    fileChooser.setMultiSelectionEnabled(true);
+    fileChooser.setAcceptAllFileFilterUsed(true);
+    fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("KT File", "kt"));
+
+    int result = fileChooser.showOpenDialog(parent);
+    if (result == JFileChooser.APPROVE_OPTION) {
+      File[] selectedFiles = fileChooser.getSelectedFiles();
+    }
+  }
+
   void createAndShowGUI() {
     JFrame frame = new JFrame("FixedLength File");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    JPanel newContentPane = createPanel();
-    newContentPane.setOpaque(true);
-    frame.setContentPane(newContentPane);
+    JPanel contentPane = createPanel();
+    contentPane.setOpaque(true);
+    frame.setContentPane(contentPane);
+    
+    frame.setJMenuBar(createMenuBar(frame));
 
     frame.pack();
     frame.setVisible(true);
