@@ -28,8 +28,38 @@ public final class FileDefinition {
     return this.recordDefinitionMap;
   }
 
+  List<RecordDefinition> getRecordDefinitions() {
+    return this.recordDefinitions;
+  }
+
   public RecordDefinition getRecordDefinition(String recordType) {
     return this.recordDefinitionMap.get(recordType);
+  }
+  
+  public RecordDefinition getRecordDefinitionFromPrefix(String prefix) {
+    // first try direct lookup
+    RecordDefinition recordDefinition = this.recordDefinitionMap.get(prefix);
+    if (recordDefinition != null) {
+      return recordDefinition;
+    }
+    // fallback to scan
+    // actual prefix is shorter than maximum prefix length
+    for (Map.Entry<String, RecordDefinition> entry : this.recordDefinitionMap.entrySet()) {
+      String recordPrefix = entry.getKey();
+      if (prefix.startsWith(recordPrefix)) {
+        // TODO put?
+        return entry.getValue();
+      }
+    }
+    throw new FileFormatException("unknown record type " + prefix);
+  }
+
+  int maxLength(FileDefinition fileDefinition) {
+    int maxLength = 0;
+    for (RecordDefinition recordDefinition : this.recordDefinitions) {
+      maxLength = Math.max(maxLength, recordDefinition.getMaximumLength());
+    }
+    return maxLength;
   }
 
   int getMaximumPrefixLength() {

@@ -8,14 +8,14 @@ import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
 
 final class SegmentedLatin1MemorySegmentReadingLine extends Latin1MemorySegmentReadingLine {
-  
+
   private final SegmentOffsets segmentOffsets;
 
   SegmentedLatin1MemorySegmentReadingLine(MemorySegment segment, SegmentOffsets segmentOffsets) {
     super(segment);
     this.segmentOffsets = Objects.requireNonNull(segmentOffsets, "segmentOffsets");
   }
-  
+
   private int getSegmentStart(SegmentFieldDefinition<?> field) {
     return this.segmentOffsets.getSegmentOffset(field.getSegmentIndex());
   }

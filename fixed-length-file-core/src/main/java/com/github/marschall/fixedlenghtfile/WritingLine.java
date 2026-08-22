@@ -10,6 +10,10 @@ public interface WritingLine {
   void writeUnsignedLong(UnsignedFieldDefinition field, long value);
 
   void writeString(StringFieldDefinition field, String s);
+  
+  void writeNoValue(UnsignedFieldDefinition field);
+  
+  void writeNoValue(StringFieldDefinition field);
 
   void writeSegmentIndicator(StringFieldDefinition field, SegmentIndicator indicator);
 

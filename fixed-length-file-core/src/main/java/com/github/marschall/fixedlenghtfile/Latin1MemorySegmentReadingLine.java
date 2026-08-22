@@ -32,9 +32,25 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
 
   protected int readUnsignedInt(int baseOffset, UnsignedFieldDefinition field) {
     int offset = baseOffset + field.getOffset();
-    return readUnsignedInt(offset, field.getLength());
+    return readUnsignedIntSafe(offset, field.getLength());
   }
-  
+
+  private int readUnsignedIntSafe(int offset, int length) {
+    int value = 0;
+    for (int i = 0; i < length; i++) {
+      char c = readCharAt(offset + i);
+      if (i == ' ') {
+        // TODO invalid
+        return value;
+      }
+      if (c < '0' || c > '9') {
+        throw digitExpectedAt(offset + i, c);
+      }
+      value = value * 10 + (c - '0');
+    }
+    return value;
+  }
+
   private int readUnsignedInt(int offset, int length) {
     int value = 0;
     for (int i = 0; i < length; i++) {
@@ -49,7 +65,11 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
 
   @Override
   public LocalDate readLocalDate(UnsignedFieldDefinition field) {
-    int yyyyMMdd = readUnsignedInt(field.getOffset(), field.getLength());
+    int yyyyMMdd = readUnsignedIntSafe(field.getOffset(), field.getLength());
+    if (yyyyMMdd < 1000_00_00) {
+      // TODO invalid
+      return null;
+    }
     int dayOfMonth = yyyyMMdd % 100;
     int month = (yyyyMMdd / 100) % 100;
     int year = yyyyMMdd / 100_00;
@@ -72,6 +92,10 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
   @Override
   public LocalDateTime readLocalDateTime(UnsignedFieldDefinition dateField, UnsignedFieldDefinition timeField) {
     var localDate = readLocalDate(dateField);
+    if (localDate == null) {
+      // TODO invalid
+      return null;
+    }
     var localTime = readLocalTime(timeField);
     return LocalDateTime.of(localDate, localTime);
   }

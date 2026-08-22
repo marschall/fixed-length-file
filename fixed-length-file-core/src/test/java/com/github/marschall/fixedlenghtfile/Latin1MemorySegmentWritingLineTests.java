@@ -47,7 +47,7 @@ class Latin1MemorySegmentWritingLineTests {
 
     byte[] target = new byte[recordDefinition.getMaximumLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
-    var line = new Latin1MemorySegmentWritingLine(segment, 0L);
+    var line = new Latin1MemorySegmentWritingLine(segment);
 
     line.writeString(R.FIELD1, "Fi\u00E9ld1");
     line.writeString(R.FIELD2, "Fi\u00E9ld");
@@ -56,6 +56,25 @@ class Latin1MemorySegmentWritingLineTests {
     line.writeUnsignedInt(R.FIELD7, 3);
 
     assertEquals("Fi\u00E9ld1Fi\u00E9ld       1203", new String(target, ISO_8859_1));
+  }
+
+  @Test
+  void writeEmptyLine() throws IOException {
+    FileDefinition fileDefinition = new FileDefinition(List.of(R.definition()));
+    
+    var recordDefinition = fileDefinition.getRecordDefinition("R");
+    
+    byte[] target = new byte[recordDefinition.getMaximumLength()];
+    MemorySegment segment = MemorySegment.ofArray(target);
+    var line = new Latin1MemorySegmentWritingLine(segment);
+    
+    line.writeNoValue(R.FIELD1);
+    line.writeNoValue(R.FIELD2);
+    line.writeNoValue(R.FIELD3);
+    line.writeNoValue(R.FIELD6);
+    line.writeNoValue(R.FIELD7);
+    
+    assertEquals("                  0000", new String(target, ISO_8859_1));
   }
 
   @Test

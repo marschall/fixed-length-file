@@ -10,7 +10,6 @@ import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefiniti
 public abstract sealed class RecordDefinition {
 
   private final String type;
-//  private final List<OffsetFieldDefinition> fields;
 
   RecordDefinition(String type) {
     this.type = Objects.requireNonNull(type, "type");
@@ -40,9 +39,11 @@ public abstract sealed class RecordDefinition {
   public static final class FixedLengthRecordDefinition extends RecordDefinition {
 
     private final int length;
+    private final List<? extends OffsetFieldDefinition> fields;
 
     public FixedLengthRecordDefinition(String type, List<? extends OffsetFieldDefinition> fields) {
       super(type);
+      this.fields = fields;
       this.length = computeLength(fields);
     }
 
@@ -56,6 +57,10 @@ public abstract sealed class RecordDefinition {
       return this.length;
     }
 
+    public List<? extends OffsetFieldDefinition> getFields() {
+      return this.fields;
+    }
+
   }
 
   public static final class SegmentedRecordDefinition extends RecordDefinition {
@@ -64,15 +69,15 @@ public abstract sealed class RecordDefinition {
     private final int maxiumLength;
     private final int baseRecordCount;
     private final List<SegmentDefinition> segmentDefinitions;
-    private final List<? extends OffsetFieldDefinition> fixedRecords;
+    private final List<? extends OffsetFieldDefinition> fixedFields;
 
-    public SegmentedRecordDefinition(String type, List<? extends OffsetFieldDefinition> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
+    public SegmentedRecordDefinition(String type, List<? extends OffsetFieldDefinition> fixedFields, List<SegmentDefinition> segmentDefinitions) {
       super(type);
-      this.fixedRecords = fixedRecords;
+      this.fixedFields = fixedFields;
       this.segmentDefinitions = segmentDefinitions;
-      this.baseLength = computeLength(fixedRecords);
-      this.maxiumLength = computeMaxiumLength(fixedRecords, segmentDefinitions);
-      this.baseRecordCount = fixedRecords.size();
+      this.baseLength = computeLength(fixedFields);
+      this.maxiumLength = computeMaxiumLength(fixedFields, segmentDefinitions);
+      this.baseRecordCount = fixedFields.size();
     }
 
     static int computeMaxiumLength(List<? extends OffsetFieldDefinition> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
@@ -97,8 +102,8 @@ public abstract sealed class RecordDefinition {
       return this.segmentDefinitions;
     }
 
-    public List<? extends OffsetFieldDefinition> getFixedRecords() {
-      return this.fixedRecords;
+    public List<? extends OffsetFieldDefinition> getFixedFields() {
+      return this.fixedFields;
     }
 
     

@@ -98,7 +98,7 @@ public class FixedLengthUiApplication {
   static List<ColumnModel> buildColumnModelList(FileDefinition fileDefinition, String recordType) {
     SegmentedRecordDefinition recordDefinition = (SegmentedRecordDefinition) fileDefinition.getRecordDefinition(recordType);
     List<ColumnModel> models = new ArrayList<>();
-    for (OffsetFieldDefinition fieldDefinition : recordDefinition.getFixedRecords()) {
+    for (OffsetFieldDefinition fieldDefinition : recordDefinition.getFixedFields()) {
       String fieldName = fieldDefinition.getName();
       Class<?> valueType = getValueType(fieldDefinition);
       ValueAccessor accessor = getAccessor(fieldDefinition);

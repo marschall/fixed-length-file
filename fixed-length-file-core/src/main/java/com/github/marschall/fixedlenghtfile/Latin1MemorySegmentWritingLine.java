@@ -8,15 +8,11 @@ import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
 final class Latin1MemorySegmentWritingLine implements WritingLine {
-  // TODO currently unlimited length, could benefit from slice()
-  
-  private final MemorySegment segment;
-  
-  private final long start;
 
-  Latin1MemorySegmentWritingLine(MemorySegment segment, long start) {
+  private final MemorySegment segment;
+
+  Latin1MemorySegmentWritingLine(MemorySegment segment) {
     this.segment = segment;
-    this.start = start;
   }
 
   @Override
@@ -28,25 +24,42 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
     // .asSlice(base, padding).fill((byte) '0');
     // MemorySegment.copy(buffer, 0, this.segment, ValueLayout.JAVA_BYTE, base + padding, buffer.length);
     int digits = digits(value);
-    long base = this.start + offset;
     int padding = length - digits;
-    for (int i = 0; i < padding; i++) {
-      writeCharAt(base + i, '0');
-    }
+    this.writePaddingNumber(offset, padding);
     int remaining = value;
     for (int i = 0; i < digits; i++) {
       int digit = remaining % 10;
-      writeCharAt(base + length - i - 1, (char) ('0' + digit));
+      writeCharAt(offset + length - i - 1, (char) ('0' + digit));
       remaining = remaining / 10;
     }
+  }
+
+  private void writePaddingNumber(int offset, int padding) {
+    for (int i = 0; i < padding; i++) {
+      writeCharAt(offset + i, '0');
+    }
+  }
+
+  @Override
+  public void writeNoValue(UnsignedFieldDefinition field) {
+    int offset = field.getOffset();
+    int length = field.getLength();
+    this.writePaddingNumber(offset, length);
   }
 
   @Override
   public void writeUnsignedLong(UnsignedFieldDefinition field, long value) {
     int offset = field.getOffset();
     int length = field.getLength();
-    // TODO Auto-generated method stub
-    
+    int digits = digits(value);
+    int padding = length - digits;
+    writePaddingNumber(offset, padding);
+    long remaining = value;
+    for (int i = 0; i < digits; i++) {
+      int digit = (int) (remaining % 10L);
+      writeCharAt(offset + length - i - 1, (char) ('0' + digit));
+      remaining = remaining / 10L;
+    }
   }
 
   @Override
@@ -54,37 +67,46 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
     int offset = field.getOffset();
     int length = field.getLength();
     // REVIEW this.segment.setString will add 0 terminator
-    long base = this.start + offset;
     if (s != null) {
       for (int i = 0; i < s.length(); i++) {
         char c = s.charAt(i);
         if (c > 255) {
           throw new IllegalArgumentException("non-latin 1 character encountered");
         }
-        writeCharAt(base + i, c);
+        writeCharAt(offset + i, c);
       }
     }
     int stringLength = s != null ? s.length() : 0;
     int padding = length - stringLength;
+    this.writePaddingString(offset + stringLength, padding);
+  }
+
+  @Override
+  public void writeNoValue(StringFieldDefinition field) {
+    int offset = field.getOffset();
+    int length = field.getLength();
+    this.writePaddingString(offset, length);
+  }
+
+  private void writePaddingString(int offset, int padding) {
     for (int i = 0; i < padding; i++) {
       // .asSlice(base, padding).fill((byte) ' ');
-      writeCharAt(base + stringLength + i, ' ');
+      writeCharAt(offset + i, ' ');
     }
   }
-  
+
   @Override
   public void writeSegmentIndicator(StringFieldDefinition field, SegmentIndicator indicator) {
     int offset = field.getOffset();
-    long base = this.start + offset;
     char c = indicator.getValue();
-    writeCharAt(base, c);
+    writeCharAt(offset, c);
   }
 
   private void writeCharAt(long index, char c) {
     byte b = (byte) c;
     this.segment.setAtIndex(JAVA_BYTE, index, b);
   }
-  
+
   private static byte[] toLatin1ByteArray(int i) {
     // REVIEW could be pooled
     int digits = digits(i);
@@ -104,12 +126,26 @@ final class Latin1MemorySegmentWritingLine implements WritingLine {
     }
     int p = 10;
     for (int j = 1; j < 10; j++) {
-        if (i < p) {
-          return j;
-        }
-        p = 10 * p;
+      if (i < p) {
+        return j;
+      }
+      p = 10 * p;
     }
     return 9;
+  }
+
+  static int digits(long l) {
+    if (l < 0) {
+      throw new IllegalArgumentException("value must be positive");
+    }
+    int p = 10;
+    for (int j = 1; j < 19; j++) {
+      if (l < p) {
+        return j;
+      }
+      p = 10 * p;
+    }
+    return 18;
   }
 
 }
