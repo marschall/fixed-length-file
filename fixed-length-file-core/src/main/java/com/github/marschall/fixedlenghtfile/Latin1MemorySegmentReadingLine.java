@@ -6,17 +6,13 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.foreign.MemorySegment;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
-abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
+abstract sealed class Latin1MemorySegmentReadingLine extends AbstractReadingLine
   permits FixedLatin1MemorySegmentReadingLine, SegmentedLatin1MemorySegmentReadingLine {
 
   private final MemorySegment memorySegment;
@@ -35,7 +31,7 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
     return readUnsignedIntSafe(offset, field.getLength());
   }
 
-  private int readUnsignedIntSafe(int offset, int length) {
+  int readUnsignedIntSafe(int offset, int length) {
     int value = 0;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -51,7 +47,7 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
     return value;
   }
 
-  private int readUnsignedInt(int offset, int length) {
+  int readUnsignedInt(int offset, int length) {
     int value = 0;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -61,43 +57,6 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
       value = value * 10 + (c - '0');
     }
     return value;
-  }
-
-  @Override
-  public LocalDate readLocalDate(UnsignedFieldDefinition field) {
-    int yyyyMMdd = readUnsignedIntSafe(field.getOffset(), field.getLength());
-    if (yyyyMMdd < 1000_00_00) {
-      // TODO invalid
-      return null;
-    }
-    int dayOfMonth = yyyyMMdd % 100;
-    int month = (yyyyMMdd / 100) % 100;
-    int year = yyyyMMdd / 100_00;
-    return LocalDate.of(year, month, dayOfMonth);
-  }
-  
-  @Override
-  public LocalTime readLocalTime(UnsignedFieldDefinition field) {
-    int length = field.getLength();
-    int value = readUnsignedInt(field.getOffset(), length);
-    // length 6: hhmmss 8: hhmmsscc
-    int hhmmsscc = length == 6 ? value * 100 : value;
-    int nanoOfSecond = (hhmmsscc % 100) * 10_000_000; // xx -> xx0_000_000
-    int second = (hhmmsscc / 100) % 100;
-    int minute = (hhmmsscc / 100_00) % 100;
-    int hour = hhmmsscc / 100_00_00;
-    return LocalTime.of(hour, minute, second, nanoOfSecond);
-  }
-  
-  @Override
-  public LocalDateTime readLocalDateTime(UnsignedFieldDefinition dateField, UnsignedFieldDefinition timeField) {
-    var localDate = readLocalDate(dateField);
-    if (localDate == null) {
-      // TODO invalid
-      return null;
-    }
-    var localTime = readLocalTime(timeField);
-    return LocalDateTime.of(localDate, localTime);
   }
 
   private char readCharAt(int index) {
@@ -117,7 +76,7 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
   protected long readUnsignedLong(int baseOffset, UnsignedFieldDefinition field) {
     return readUnsignedLong(baseOffset + field.getOffset(), field.getLength());
   }
-  
+
   private long readUnsignedLong(int offset, int length) {
     long value = 0L;
     for (int i = 0; i < length; i++) {
@@ -128,13 +87,6 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
       value = value * 10L + (c - '0');
     }
     return value;
-  }
-
-  @Override
-  public BigDecimal readBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField) {
-    long amount = readUnsignedLong(amountField);
-    int exponent = readUnsignedInt(exponentField);
-    return BigDecimal.valueOf(amount, exponent);
   }
 
   @Override
@@ -218,11 +170,12 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
   }
 
   final class MemorySegmentReader extends Reader {
-    // TODO mark
-    // TODO transferTo
+    // no mark because ojdbc does not call it
+    // no transferTo ojdbc does not call it
 
     private boolean closed;
 
+    // TODO short for packing
     private int position;
 
     MemorySegmentReader() {
@@ -254,6 +207,7 @@ abstract sealed class Latin1MemorySegmentReadingLine implements ReadingLine
 
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
+      // actually called by ojdbc
       this.closedCheck();
       if (len == 0) {
         return 0;

@@ -54,7 +54,7 @@ public final class FileDefinition {
     throw new FileFormatException("unknown record type " + prefix);
   }
 
-  int maxLength(FileDefinition fileDefinition) {
+  int getMaximumLength() {
     int maxLength = 0;
     for (RecordDefinition recordDefinition : this.recordDefinitions) {
       maxLength = Math.max(maxLength, recordDefinition.getMaximumLength());
