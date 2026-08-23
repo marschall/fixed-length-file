@@ -7,9 +7,14 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -18,6 +23,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -43,22 +49,35 @@ public class FixedLengthUiApplication {
 
   private final FileDefinition definition;
   private final List<ColumnModel> columnModels;
-  private FixedLengthTableModel dataModel;
+  private final List<Path> openFiles;
+  private JTabbedPane tabbedPane;
+  private final ExecutorService backgroundLoader;
 
   FixedLengthUiApplication(FileDefinition definition) {
     this.definition = definition;
     this.columnModels = buildColumnModelList(definition, "KT");
+    this.openFiles = Collections.synchronizedList(new ArrayList<>());
+    this.backgroundLoader = Executors.newSingleThreadExecutor();
   }
 
-  JPanel createPanel() {
-    var panel = new JPanel(new GridLayout(1,0));
+  JPanel createContentPane() {
+    var panel = new JPanel(new GridLayout(1, 1));
+
+    this.tabbedPane = new JTabbedPane();
+    this.tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+    panel.add(this.tabbedPane);
+
+    return panel;
+  }
+
+  JPanel createTablePanel(FixedLengthTableModel dataModel) {
+    var panel = new JPanel(new GridLayout(1, 0));
 
     var table = new JTable();
     table.setPreferredScrollableViewportSize(new Dimension(500, 70));
     table.setFillsViewportHeight(true);
     table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-    this.dataModel = new FixedLengthTableModel(this.columnModels);
-    table.setModel(this.dataModel);
+    table.setModel(dataModel);
 
     setColumnWidths(table);
 
@@ -78,21 +97,47 @@ public class FixedLengthUiApplication {
     }
   }
 
-  void loadFile(Path path) {
-    Thread loader = new Thread(() -> {
+  private void openFile(Path path) {
+    synchronized (this.openFiles) {
+      // search open files first
+      for (int i = 0; i < this.openFiles.size(); i++) {
+        Path openFile = this.openFiles.get(i);
+        try {
+          if (Files.isSameFile(openFile, path)) {
+            this.selectTab(i);
+            return;
+          }
+        } catch (IOException e) {
+          e.printStackTrace(System.err);
+        }
+      }
+    }
+    this.loadFileInBackground(path);
+  }
+
+  private void selectTab(int index) {
+    SwingUtilities.invokeLater(() -> this.tabbedPane.setSelectedIndex(index));
+  }
+
+  private void loadFileInBackground(Path path) {
+    this.backgroundLoader.submit(() -> {
       Arena arena = Arena.ofAuto();
       try {
         StatefulFixedLengthFile file = FixedLengthFileParser.parseFile(this.definition, path, arena);
         List<LineLocator> locators = file.preparseFile("KT");
-        SwingUtilities.invokeLater(() -> {
-          dataModel.loadFile(file, locators);
-        });
+        FixedLengthTableModel tableModel = new FixedLengthTableModel(columnModels);
+        tableModel.loadFile(file, locators);
+        SwingUtilities.invokeLater(() -> addTab(path, tableModel));
       } catch (IOException e) {
         e.printStackTrace(System.err);
       }
-      
-    }, "data-loader");
-    loader.start();
+    });
+  }
+  
+  void addTab(Path file, FixedLengthTableModel tableModel) {
+    JPanel tablePanel = createTablePanel(tableModel);
+    this.tabbedPane.addTab(file.getFileName().toString(), tablePanel);
+    this.openFiles.add(file);
   }
 
   static List<ColumnModel> buildColumnModelList(FileDefinition fileDefinition, String recordType) {
@@ -196,17 +241,21 @@ public class FixedLengthUiApplication {
     var fileMenu = new JMenu("File");
     fileMenu.setMnemonic(KeyEvent.VK_F);
 
-    var openItem = new JMenuItem("Open", KeyEvent.VK_O);
+    var openItem = new JMenuItem("Open File...", KeyEvent.VK_O);
     openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
-    openItem.addActionListener(event -> this.openFile(event, frame));
+    openItem.addActionListener(event -> this.openFileAction(event, frame));
     fileMenu.add(openItem);
+    fileMenu.addSeparator();
+    var exit = new JMenuItem("Exit");
+    exit.addActionListener(_ -> System.exit(0));
+    fileMenu.add(exit);
 
     menuBar.add(fileMenu);
 
     return menuBar;
   }
 
-  void openFile(ActionEvent event, JFrame parent) {
+  void openFileAction(ActionEvent event, JFrame parent) {
     var fileChooser = new JFileChooser();
     fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
     fileChooser.setMultiSelectionEnabled(true);
@@ -216,17 +265,21 @@ public class FixedLengthUiApplication {
     int result = fileChooser.showOpenDialog(parent);
     if (result == JFileChooser.APPROVE_OPTION) {
       File[] selectedFiles = fileChooser.getSelectedFiles();
+      for (File selectedFile : selectedFiles) {
+        openFile(selectedFile.toPath());
+      }
     }
   }
 
   void createAndShowGUI() {
-    JFrame frame = new JFrame("FixedLength File");
+    JFrame frame = new JFrame("FixedLength File Viewer");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    JPanel contentPane = createPanel();
+    JPanel contentPane = createContentPane();
     contentPane.setOpaque(true);
+    contentPane.setPreferredSize(new Dimension(500, 280));
     frame.setContentPane(contentPane);
-    
+
     frame.setJMenuBar(createMenuBar(frame));
 
     frame.pack();
@@ -238,7 +291,12 @@ public class FixedLengthUiApplication {
     SwingUtilities.invokeLater(() -> {
       var application = new FixedLengthUiApplication(definition);
       application.createAndShowGUI();
-//      application.loadFile(Path.of(""));
+      for (String arg : args) {
+        Path toOpen = Paths.get(arg);
+        if (Files.exists(toOpen) && Files.isReadable(toOpen)) {
+          application.openFile(toOpen);
+        }
+      }
     });
   }
 

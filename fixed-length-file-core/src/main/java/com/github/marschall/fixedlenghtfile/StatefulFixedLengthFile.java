@@ -52,6 +52,11 @@ public final class StatefulFixedLengthFile extends FixedLengthFile implements Cl
       this.lineInformation = Objects.requireNonNull(lineInformation, "lineInformation");
     }
 
+    @Override
+    public String toString() {
+      return "start: " + this.lineStart + " line: " + this.lineInformation;
+    }
+
   }
 
   public ReadingLine nextLineOrNull() {

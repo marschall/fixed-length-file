@@ -28,7 +28,7 @@ public class FixedLengthTableModel extends AbstractTableModel {
     this.columnCount = columnModelList.size();
     this.rowCount = 0;
   }
-  
+
   public void loadFile(StatefulFixedLengthFile file, List<LineLocator> lines) {
     this.file = file;
     this.rowCount = lines.size();
@@ -40,12 +40,12 @@ public class FixedLengthTableModel extends AbstractTableModel {
   public int getRowCount() {
     return this.rowCount;
   }
-  
+
   @Override
   public String getColumnName(int column) {
     return this.columnModelList.get(column).getColumnName();
   }
-  
+
   @Override
   public int findColumn(String columnName) {
     Integer columnIndex = this.columnModelMap.get(columnName);
@@ -55,7 +55,7 @@ public class FixedLengthTableModel extends AbstractTableModel {
       return -1;
     }
   }
-  
+
   @Override
   public Class<?> getColumnClass(int columnIndex) {
     return this.columnModelList.get(columnIndex).getColumnClass();

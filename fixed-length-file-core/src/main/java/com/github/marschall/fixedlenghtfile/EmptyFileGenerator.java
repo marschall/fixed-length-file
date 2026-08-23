@@ -63,7 +63,7 @@ public final class EmptyFileGenerator {
       lineStart = this.writeEmptyLine(segment, lineStart, record);
     }
 
-    RecordDefinition trailer = recordDefinitions.getFirst();
+    RecordDefinition trailer = recordDefinitions.getLast();
     lineStart = this.writeEmptyLine(segment, lineStart, trailer);
   }
 
