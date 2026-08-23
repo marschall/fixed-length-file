@@ -91,7 +91,9 @@ public final class EmptyFileGenerator {
     }
     MemorySegment recordSegment = fileSegment.asSlice(lineStart, recordLength);
     WritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
-    for (OffsetFieldDefinition field : segmentedRecordDefinition.getFixedFields()) {
+    List<? extends OffsetFieldDefinition> fields = segmentedRecordDefinition.getFixedFields();
+    writeTypeField(segmentedRecordDefinition, fields.getFirst(), line);
+    for (OffsetFieldDefinition field : fields.subList(1, fields.size())) {
       switch (field) {
         case StringFieldDefinition stringField -> {
           if (segmentIndicatorFields.contains(stringField)) {
@@ -107,11 +109,13 @@ public final class EmptyFileGenerator {
     return recordLength;
   }
 
-  private long writeEmptyFixedLine(MemorySegment fileSegment, long lineStart, FixedLengthRecordDefinition fixed) {
-    int recordLength = fixed.getBaseLength();
+  private long writeEmptyFixedLine(MemorySegment fileSegment, long lineStart, FixedLengthRecordDefinition fixedRecordDefinition) {
+    int recordLength = fixedRecordDefinition.getBaseLength();
     MemorySegment recordSegment = fileSegment.asSlice(lineStart, recordLength);
     WritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
-    for (OffsetFieldDefinition field : fixed.getFields()) {
+    List<? extends OffsetFieldDefinition> fields = fixedRecordDefinition.getFields();
+    writeTypeField(fixedRecordDefinition, fields.getFirst(), line);
+    for (OffsetFieldDefinition field : fields.subList(1, fields.size())) {
       switch (field) {
         case StringFieldDefinition stringField -> line.writeNoValue(stringField);
         case UnsignedFieldDefinition unsignedField -> line.writeNoValue(unsignedField);
@@ -119,6 +123,18 @@ public final class EmptyFileGenerator {
       };
     }
     return recordLength;
+  }
+  
+  private void writeTypeField(RecordDefinition recordDefinition, OffsetFieldDefinition fieldDefintion, WritingLine line) {
+    String recordType = recordDefinition.getType();
+    int expectedLength = recordType.length();
+    if (fieldDefintion.getLength() != expectedLength) {
+      throw new IllegalStateException("expected type field of length: ");
+    }
+    if (!(fieldDefintion instanceof StringFieldDefinition stringField)) {
+      throw new IllegalStateException("expected type field " + fieldDefintion + " to be of type String");
+    }
+    line.writeString(stringField, recordType);
   }
 
   private long computeTotalFileSize(int lineCount) {

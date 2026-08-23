@@ -1,5 +1,7 @@
 package com.github.marschall.fixedlenghtfile;
 
+import java.util.Arrays;
+
 final class SegmentOffsets {
 
   static final int SEGMENT_NOT_PRESENT = -1;
@@ -27,6 +29,10 @@ final class SegmentOffsets {
     return this.segmentOffsets[segmentIndex];
   }
   
+  @Override
+  public String toString() {
+    return Arrays.toString(this.segmentOffsets);
+  }
   // TODO boolean counts towards record length
 
 }

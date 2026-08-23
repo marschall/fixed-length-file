@@ -71,7 +71,7 @@ public abstract sealed class FixedLengthFile
         return position;
       }
       byte b2 = this.segment.getAtIndex(JAVA_BYTE, position + 1);
-      return b2 == LF ? position + 1 : position;
+      return b2 == LF ? position + 2 : position + 1;
     }
     throw new FileFormatException("expected newline at: " + position);
   }
