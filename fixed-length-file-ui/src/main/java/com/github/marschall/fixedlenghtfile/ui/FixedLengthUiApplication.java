@@ -92,7 +92,8 @@ public class FixedLengthUiApplication {
     for (int i = 0; i < this.columnModels.size(); i++) {
       ColumnModel columnModel = this.columnModels.get(i);
       TableColumn column = table.getColumnModel().getColumn(i);
-      int stringWidth = tableFontMetrics.stringWidth(columnModel.getColumnName());
+      String reference  = "X".repeat(columnModel.getColumnWidth());
+      int stringWidth = tableFontMetrics.stringWidth(reference);
       column.setPreferredWidth(stringWidth + 10);
     }
   }
@@ -144,18 +145,17 @@ public class FixedLengthUiApplication {
     SegmentedRecordDefinition recordDefinition = (SegmentedRecordDefinition) fileDefinition.getRecordDefinition(recordType);
     List<ColumnModel> models = new ArrayList<>();
     for (OffsetFieldDefinition fieldDefinition : recordDefinition.getFixedFields()) {
-      String fieldName = fieldDefinition.getName();
       Class<?> valueType = getValueType(fieldDefinition);
       ValueAccessor accessor = getAccessor(fieldDefinition);
-      models.add(new ColumnModel(fieldName, valueType, accessor));
+      models.add(new ColumnModel(valueType, accessor, fieldDefinition));
     }
     for (SegmentDefinition segmentDefinition : recordDefinition.getSegmentDefinitions()) {
       StringFieldDefinition segmentIndicatorField = segmentDefinition.getSegmentIndicatorField();
       for (SegmentFieldDefinition<?> fieldDefinition : segmentDefinition.getFields()) {
-        String fieldName = fieldDefinition.getName();
-        Class<?> valueType = getValueType(fieldDefinition.getDelegate());
+        OffsetFieldDefinition delegateFieldDefinition = fieldDefinition.getDelegate();
+        Class<?> valueType = getValueType(delegateFieldDefinition);
         ValueAccessor accessor = getAccessor(segmentIndicatorField, fieldDefinition);
-        models.add(new ColumnModel(fieldName, valueType, accessor));
+        models.add(new ColumnModel(valueType, accessor, delegateFieldDefinition));
       }
     }
     return models;

@@ -35,7 +35,7 @@ abstract sealed class Latin1MemorySegmentReadingLine extends AbstractReadingLine
     int value = 0;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
-      if (i == ' ') {
+      if (c == ' ') {
         // TODO invalid
         return value;
       }

@@ -1,17 +1,18 @@
 package com.github.marschall.fixedlenghtfile.ui;
 
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlenghtfile.ReadingLine;
 
 final class ColumnModel {
 
   private final ValueAccessor valueAccessor;
   private final Class<?> columnClass;
-  private final String columnName;
+  private final OffsetFieldDefinition fieldDefinition;
 
-  ColumnModel(String columnName, Class<?> columnClass, ValueAccessor valueAccessor) {
-    this.columnName = columnName;
+  ColumnModel(Class<?> columnClass, ValueAccessor valueAccessor, OffsetFieldDefinition fieldDefinition) {
     this.valueAccessor = valueAccessor;
     this.columnClass = columnClass;
+    this.fieldDefinition = fieldDefinition;
   }
 
   Class<?> getColumnClass() {
@@ -19,11 +20,15 @@ final class ColumnModel {
   }
 
   String getColumnName() {
-    return this.columnName;
+    return this.fieldDefinition.getName();
   }
 
   Object readValueFrom(ReadingLine line) {
     return this.valueAccessor.readValueFrom(line);
+  }
+
+  int getColumnWidth() {
+    return Math.max(this.fieldDefinition.getName().length(), this.fieldDefinition.getLength());
   }
 
   @FunctionalInterface
