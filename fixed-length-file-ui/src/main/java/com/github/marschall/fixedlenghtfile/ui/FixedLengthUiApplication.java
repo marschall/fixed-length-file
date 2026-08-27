@@ -57,7 +57,11 @@ public class FixedLengthUiApplication {
     this.definition = definition;
     this.columnModels = buildColumnModelList(definition, "KT");
     this.openFiles = Collections.synchronizedList(new ArrayList<>());
-    this.backgroundLoader = Executors.newSingleThreadExecutor();
+    this.backgroundLoader = Executors.newSingleThreadExecutor(runnable -> {
+      var thread = new Thread(runnable, "background-loader");
+      thread.setDaemon(true);
+      return thread;
+    });
   }
 
   JPanel createContentPane() {
@@ -126,7 +130,7 @@ public class FixedLengthUiApplication {
       try {
         StatefulFixedLengthFile file = FixedLengthFileParser.parseFile(this.definition, path, arena);
         List<LineLocator> locators = file.preparseFile("KT");
-        FixedLengthTableModel tableModel = new FixedLengthTableModel(columnModels);
+        FixedLengthTableModel tableModel = new FixedLengthTableModel(this.columnModels);
         tableModel.loadFile(file, locators);
         SwingUtilities.invokeLater(() -> addTab(path, tableModel));
       } catch (IOException e) {

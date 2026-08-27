@@ -10,13 +10,14 @@ import com.github.marschall.fixedlenghtfile.ReadingLine;
 import com.github.marschall.fixedlenghtfile.StatefulFixedLengthFile;
 import com.github.marschall.fixedlenghtfile.StatefulFixedLengthFile.LineLocator;
 
-public class FixedLengthTableModel extends AbstractTableModel {
+final class FixedLengthTableModel extends AbstractTableModel {
 
   private final int columnCount;
   private int rowCount;
   private List<ColumnModel> columnModelList;
   private Map<String, Integer> columnModelMap;
   private List<LineLocator> lines;
+  // TODO not Serializable
   private StatefulFixedLengthFile file;
 
   public FixedLengthTableModel(List<ColumnModel> columnModelList) {

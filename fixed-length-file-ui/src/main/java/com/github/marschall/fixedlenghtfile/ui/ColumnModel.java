@@ -1,12 +1,15 @@
 package com.github.marschall.fixedlenghtfile.ui;
 
+import java.io.Serializable;
+
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlenghtfile.ReadingLine;
 
-final class ColumnModel {
+final class ColumnModel implements Serializable {
 
   private final ValueAccessor valueAccessor;
   private final Class<?> columnClass;
+  // TODO not Serializable
   private final OffsetFieldDefinition fieldDefinition;
 
   ColumnModel(Class<?> columnClass, ValueAccessor valueAccessor, OffsetFieldDefinition fieldDefinition) {
@@ -32,7 +35,7 @@ final class ColumnModel {
   }
 
   @FunctionalInterface
-  interface ValueAccessor {
+  interface ValueAccessor extends Serializable {
 
     Object readValueFrom(ReadingLine line);
 
