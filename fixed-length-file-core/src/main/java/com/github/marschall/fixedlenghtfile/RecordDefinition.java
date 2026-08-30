@@ -80,6 +80,19 @@ public abstract sealed class RecordDefinition {
       this.baseRecordCount = fixedFields.size();
     }
 
+    int computeRecordLength(SegmentOffsets segmentOffsets) {
+      int length = this.getBaseLength();
+      List<SegmentDefinition> segmentDefinitions = this.getSegmentDefinitions();
+      for (int i = 0; i < segmentDefinitions.size(); i++) {
+        var segmentDefinition = segmentDefinitions.get(i);
+        int segmentOffset = segmentOffsets.getSegmentOffset(i);
+        if (segmentOffset != SegmentOffsets.SEGMENT_NOT_PRESENT) {
+          length += segmentDefinition.getLength();
+        }
+      }
+      return length;
+    }
+
     static int computeMaxiumLength(List<? extends OffsetFieldDefinition> fixedRecords, List<SegmentDefinition> segmentDefinitions) {
       int maxLength = computeLength(fixedRecords);
       for (SegmentDefinition segmentDefinition : segmentDefinitions) {

@@ -32,8 +32,11 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
 
   @Override
   public @Nullable ReadingLine read() throws Exception {
-    currentItemCount++;
-    return null;
+    ReadingLine line = this.file.nextLineOrNull();
+    if (line != null) {
+      this.currentItemCount++;
+    }
+    return line;
   }
 
   @Override

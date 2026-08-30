@@ -201,7 +201,6 @@ class ReadingLineTests {
     });
   }
 
-  @Disabled
   @Test
   void bufferedReadingLine1() throws IOException {
     var fileDefinition = new FileDefinition(List.of(R1.definition()));
@@ -215,8 +214,7 @@ class ReadingLineTests {
     assertSame("", line.readTrimmedString(R1.FIELD5));
     assertEquals(12, line.readUnsignedInt(R1.FIELD6));
   }
-  
-  @Disabled
+
   @Test
   void bufferedReadingLine2() throws IOException {
     var fileDefinition = new FileDefinition(List.of(R1.definition()));

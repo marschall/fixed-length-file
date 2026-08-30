@@ -24,10 +24,6 @@ public final class FileDefinition {
     return map;
   }
 
-  Map<String, RecordDefinition> getRecordDefinitionMap() {
-    return this.recordDefinitionMap;
-  }
-
   List<RecordDefinition> getRecordDefinitions() {
     return this.recordDefinitions;
   }

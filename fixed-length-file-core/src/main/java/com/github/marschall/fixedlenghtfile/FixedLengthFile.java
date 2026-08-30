@@ -33,11 +33,11 @@ public abstract sealed class FixedLengthFile
     RecordDefinition recordDefinition = determineRecordDefinition(lineStart);
     return switch (recordDefinition) {
       case FixedLengthRecordDefinition fixed -> {
-        yield new LineInformation(fixed, determineRecordLength(lineStart, fixed), NoSegment.INSTANCE);
+        yield new LineInformation(fixed, determineRecordLength(fixed), NoSegment.INSTANCE);
       }
       case SegmentedRecordDefinition segmented -> {
         SegmentOffsets segmentOffsets = readSegmentOffsets(lineStart, segmented);
-        yield new LineInformation(segmented, determineRecordLength(lineStart, segmented, segmentOffsets), segmentOffsets);
+        yield new LineInformation(segmented, determineRecordLength(segmented, segmentOffsets), segmentOffsets);
       }
     };
   }
@@ -86,7 +86,7 @@ public abstract sealed class FixedLengthFile
     for (int i = 0; i < segmentDefinitions.size(); i++) {
       var segmentDefinition = segmentDefinitions.get(i);
       StringFieldDefinition segmentIndicatorField = segmentDefinition.getSegmentIndicatorField();
-      var segmentIndicator = readSegmentIndicator(lineStart, recordDefinition, segmentIndicatorField);
+      var segmentIndicator = readSegmentIndicator(lineStart, segmentIndicatorField);
       switch (segmentIndicator) {
         case PRESENT -> {
           segmentOffsets.setSegmentOffset(i, offset);
@@ -105,7 +105,7 @@ public abstract sealed class FixedLengthFile
     return segmentOffsets;
   }
 
-  private SegmentIndicator readSegmentIndicator(long lineStart, SegmentedRecordDefinition recordDefinition, StringFieldDefinition segmentIndicatorFieldDefinition) {
+  private SegmentIndicator readSegmentIndicator(long lineStart, StringFieldDefinition segmentIndicatorFieldDefinition) {
     byte b = this.segment.getAtIndex(JAVA_BYTE, lineStart + segmentIndicatorFieldDefinition.getOffset());
     char c = (char) Byte.toUnsignedInt(b);
     return switch (c) {
@@ -116,25 +116,12 @@ public abstract sealed class FixedLengthFile
     };
   }
 
-  private int computeRecordLength(SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
-    int length = recordDefinition.getBaseLength();
-    List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
-    for (int i = 0; i < segmentDefinitions.size(); i++) {
-      var segmentDefinition = segmentDefinitions.get(i);
-      int segmentOffset = segmentOffsets.getSegmentOffset(i);
-      if (segmentOffset != SegmentOffsets.SEGMENT_NOT_PRESENT) {
-        length += segmentDefinition.getLength();
-      }
-    }
-    return length;
-  }
-
-  private int determineRecordLength(long lineStart, FixedLengthRecordDefinition recordDefinition) {
+  private static int determineRecordLength(FixedLengthRecordDefinition recordDefinition) {
     return recordDefinition.getMaximumLength();
   }
 
-  private int determineRecordLength(long lineStart, SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
-    return computeRecordLength(recordDefinition, segmentOffsets);
+  private static int determineRecordLength(SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
+    return recordDefinition.computeRecordLength(segmentOffsets);
   }
 
 }

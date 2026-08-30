@@ -3,10 +3,14 @@ package com.github.marschall.fixedlenghtfile;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.List;
 import java.util.Objects;
 
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
+import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
 import com.github.marschall.fixedlenghtfile.SegmentOffsets.ArrayBasedSegmentOffsets;
 import com.github.marschall.fixedlenghtfile.SegmentOffsets.NoSegment;
 
@@ -39,7 +43,53 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
     }
     String prefix = new String(this.buffer, 0, this.maximumPrefixLength);
     RecordDefinition recordDefinition = this.fileDefinition.getRecordDefinitionFromPrefix(prefix);
-    // TODO determine record length
+    switch (recordDefinition) {
+      case FixedLengthRecordDefinition fixed -> {
+        this.segmentOffsets = null;
+        this.length = determineRecordLength(fixed);
+      }
+      case SegmentedRecordDefinition segmented -> {
+        // allow for reading of segment indicators
+        this.length = segmented.getBaseLength();
+        this.segmentOffsets = readSegmentOffsets(segmented);
+        // actual size after segment indicators have been read
+        this.length = determineRecordLength(segmented, segmentOffsets);
+      }
+    };
+  }
+
+  private ArrayBasedSegmentOffsets readSegmentOffsets(SegmentedRecordDefinition recordDefinition) {
+    List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
+    int offset = recordDefinition.getBaseLength();
+    var segmentOffsets = new ArrayBasedSegmentOffsets(segmentDefinitions.size());
+    for (int i = 0; i < segmentDefinitions.size(); i++) {
+      var segmentDefinition = segmentDefinitions.get(i);
+      StringFieldDefinition segmentIndicatorField = segmentDefinition.getSegmentIndicatorField();
+      var segmentIndicator = readSegmentIndicator(segmentIndicatorField);
+      switch (segmentIndicator) {
+        case PRESENT -> {
+          segmentOffsets.setSegmentOffset(i, offset);
+          offset += segmentDefinition.getLength();
+        }
+        case SPACES -> {
+          segmentOffsets.setSegmentIsSpaces(i);
+          offset += segmentDefinition.getLength();
+        }
+        case ABSENT -> {
+          segmentOffsets.setSegmentNotPresent(i);
+        }
+      };
+
+    }
+    return segmentOffsets;
+  }
+
+  private static int determineRecordLength(FixedLengthRecordDefinition recordDefinition) {
+    return recordDefinition.getMaximumLength();
+  }
+
+  private static int determineRecordLength(SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
+    return recordDefinition.computeRecordLength(segmentOffsets);
   }
   
   @Override
@@ -73,50 +123,22 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
     return Long.parseLong(this, beginIndex, endIndex, 10);
   }
   
-  private void boundsCheck(StringFieldDefinition fieldDefinition) {
+  private void boundsCheck(int segmentStart, StringFieldDefinition fieldDefinition) {
     int offset = fieldDefinition.getOffset();
     int length = fieldDefinition.getLength();
-    if (offset + length > this.length) {
+    if (segmentStart + offset + length > this.length) {
       throw new IndexOutOfBoundsException();
     }
   }
 
   @Override
   public String readTrimmedString(StringFieldDefinition field) {
-    this.boundsCheck(field);
-    int offset = field.getOffset();
-    int length = field.getLength();
-    if (offset + length > this.length) {
-      throw new IndexOutOfBoundsException();
-    }
-    // initialize with end in case string is all spaces
-    int start = offset + length;
-    for (int i = 0; i < length; i++) {
-      char c = this.buffer[offset + i];
-      if (c != ' ') {
-        start = offset + i;
-        break;
-      }
-    }
-    if (start == offset + length) {
-      // avoid allocation for the common case of an empty string
-      return "";
-    }
-    // search last non space
-    int end = offset + length - 1;
-    for (int l = end; l >= start; l--) {
-      char c = this.buffer[l];
-      if (c != ' ') {
-        end = l;
-        break;
-      }
-    }
-    return new String(this.buffer, start, end - start);
+    return readTrimmedString(0, field);
   }
   
   @Override
   protected String readTrimmedString(int segmentStart, StringFieldDefinition field) {
-    this.boundsCheck(field);
+    this.boundsCheck(segmentStart, field);
     int offset = segmentStart + field.getOffset();
     int length = field.getLength();
     if (offset + length > this.length) {
@@ -144,7 +166,7 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
         break;
       }
     }
-    return new String(this.buffer, start, end - start);
+    return new String(this.buffer, start, end - start + 1);
   }
 
   @Override
