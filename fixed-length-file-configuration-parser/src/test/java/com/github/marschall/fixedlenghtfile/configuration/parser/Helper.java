@@ -12,8 +12,8 @@ final class Helper {
     throw new AssertionError("not instantiable");
   }
 
-  static Path findFileIn(Path basePath, String exentsion) throws IOException {
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(basePath, "*." + exentsion)) {
+  static Path findFileIn(Path basePath, String subString, String exentsion) throws IOException {
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(basePath, "*" + subString + "*." + exentsion)) {
       for (Path path : directoryStream) {
         return path;
       }

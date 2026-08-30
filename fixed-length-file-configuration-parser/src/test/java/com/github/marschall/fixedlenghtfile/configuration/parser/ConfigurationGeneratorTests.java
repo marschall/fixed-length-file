@@ -13,10 +13,19 @@ class ConfigurationGeneratorTests {
   @Test
   void generateTo() throws Exception {
     var interfaceVersion = InterfaceVersion.parse("2.67.0");
-    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "xml");
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "2670", "xml");
     assertNotNull(referenceFile);
     ConfigurationGenerator generator = new ConfigurationGenerator();
     generator.generateTo(interfaceVersion, Set.of("HD", "KT", "TR"), referenceFile, Paths.get("src/main/java"), "com.github.marschall.fixedlenghtfile.configuration.parser");
+  }
+
+  @Test
+  void parseVariant() throws Exception {
+    var interfaceVersion = InterfaceVersion.parse("3.0.0");
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3000",  "xml");
+    assertNotNull(referenceFile);
+    ConfigurationGenerator generator = new ConfigurationGenerator();
+    generator.generateTo(interfaceVersion, Set.of("HD", "D1", "D3", "TR"), referenceFile, Paths.get("src/main/java"), "com.github.marschall.fixedlenghtfile.configuration.parser");
   }
 
 }

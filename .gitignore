@@ -1,5 +1,6 @@
 target/
 /fixed-length-file-configuration-parser/src/main/java/com/github/marschall/fixedlenghtfile/configuration/parser/InterfaceDefinition267.java
+/fixed-length-file-configuration-parser/src/main/java/com/github/marschall/fixedlenghtfile/configuration/parser/InterfaceDefinition300.java
 .DS_Store
 *.jfr
 *.jfc

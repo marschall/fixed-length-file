@@ -30,7 +30,7 @@ class ConfigurationParserTests {
 
   @Test
   void parseReference() throws Exception {
-    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "xml");
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "2670",  "xml");
     assertNotNull(referenceFile);
     List<RecordDefinition> recordDefinitions = this.parser.parse(referenceFile, Set.of("HD", "KT", "TR"));
     assertThat(recordDefinitions).hasSize(3);
@@ -59,6 +59,14 @@ class ConfigurationParserTests {
     assertEquals("TR", tr.getName());
     assertThat(tr.hasSegments()).isFalse();
     assertEquals(155, tr.getLengthOfFields());
+  }
+
+  @Test
+  void parseVariant() throws Exception {
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3000",  "xml");
+    assertNotNull(referenceFile);
+    List<RecordDefinition> recordDefinitions = this.parser.parse(referenceFile, Set.of("HD", "D1", "D3", "TR"));
+    assertThat(recordDefinitions).hasSize(4);
   }
 
   @Test
