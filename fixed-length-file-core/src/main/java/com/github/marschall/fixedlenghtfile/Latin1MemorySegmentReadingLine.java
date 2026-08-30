@@ -12,13 +12,20 @@ import java.util.Objects;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
-abstract sealed class Latin1MemorySegmentReadingLine extends AbstractReadingLine
-  permits FixedLatin1MemorySegmentReadingLine, SegmentedLatin1MemorySegmentReadingLine {
+final class Latin1MemorySegmentReadingLine extends AbstractReadingLine {
 
   private final MemorySegment memorySegment;
 
-  Latin1MemorySegmentReadingLine(MemorySegment segment) {
+  private final SegmentOffsets segmentOffsets;
+
+  Latin1MemorySegmentReadingLine(MemorySegment segment, SegmentOffsets segmentOffsets) {
     this.memorySegment = segment;
+    this.segmentOffsets = Objects.requireNonNull(segmentOffsets, "segmentOffsets");
+  }
+
+  @Override
+  protected SegmentOffsets getSegmentOffsets() {
+    return this.segmentOffsets;
   }
 
   @Override
@@ -48,6 +55,7 @@ abstract sealed class Latin1MemorySegmentReadingLine extends AbstractReadingLine
   }
 
   int readUnsignedInt(int offset, int length) {
+    // TODO implements CharSequence -> Integer.parseInt
     int value = 0;
     for (int i = 0; i < length; i++) {
       char c = readCharAt(offset + i);
@@ -151,12 +159,7 @@ abstract sealed class Latin1MemorySegmentReadingLine extends AbstractReadingLine
   public SegmentIndicator readSegmentIndicator(StringFieldDefinition field) {
     int offset = field.getOffset();
     char c = readCharAt(offset);
-    return switch (c) {
-      case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
-      case SegmentIndicator.ABSENT_VALUE -> SegmentIndicator.ABSENT;
-      case SegmentIndicator.SPACES_VALUE -> SegmentIndicator.SPACES;
-      default -> throw new FileFormatException("Unexpected segment indicator: " + c);
-    };
+    return toSegmentIndicator(c);
   }
 
   @Override

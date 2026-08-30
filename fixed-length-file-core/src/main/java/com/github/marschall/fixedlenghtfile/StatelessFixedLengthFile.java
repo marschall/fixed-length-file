@@ -2,9 +2,6 @@ package com.github.marschall.fixedlenghtfile;
 
 import java.lang.foreign.MemorySegment;
 
-import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
-import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
-
 public final class StatelessFixedLengthFile extends FixedLengthFile {
 
   public StatelessFixedLengthFile(FileDefinition fileDefinition, MemorySegment segment) {
@@ -26,20 +23,12 @@ public final class StatelessFixedLengthFile extends FixedLengthFile {
       position = this.advanceBeyondNewline(position + lineInformation.recordLength());
     }
   }
-  
+
   protected ReadingLine readLine(long lineStart) {
     LineInformation lineInformation = this.preParseLine(lineStart);
-    RecordDefinition recordDefinition = lineInformation.recordDefinition();
     int recordLength = lineInformation.recordLength();
     MemorySegment lineSegment = this.segment.asSlice(lineStart, recordLength);
-    return switch (recordDefinition) {
-      case FixedLengthRecordDefinition _ ->  {
-        yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
-      }
-      case SegmentedRecordDefinition _ -> {
-        yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
-      }
-    };
+    return new Latin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
   }
 
 }

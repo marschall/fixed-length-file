@@ -5,13 +5,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
 
 abstract class AbstractReadingLine implements ReadingLine {
 
   protected AbstractReadingLine() {
     super();
   }
+  
+  // higher type methods
 
   @Override
   public LocalDate readLocalDate(UnsignedFieldDefinition field) {
@@ -55,6 +59,59 @@ abstract class AbstractReadingLine implements ReadingLine {
     long amount = readUnsignedLong(amountField);
     int exponent = readUnsignedInt(exponentField);
     return BigDecimal.valueOf(amount, exponent);
+  }
+  
+  // segment methods
+
+  protected abstract int readUnsignedInt(int segmentStart, UnsignedFieldDefinition delegate);
+  
+  protected abstract long readUnsignedLong(int segmentStart, UnsignedFieldDefinition delegate);
+  
+  protected abstract String readTrimmedString(int segmentStart, StringFieldDefinition delegate);
+
+  protected abstract SegmentOffsets getSegmentOffsets();
+
+  SegmentIndicator toSegmentIndicator(char c) {
+    return switch (c) {
+      case SegmentIndicator.PRESENT_VALUE -> SegmentIndicator.PRESENT;
+      case SegmentIndicator.ABSENT_VALUE -> SegmentIndicator.ABSENT;
+      case SegmentIndicator.SPACES_VALUE -> SegmentIndicator.SPACES;
+      default -> throw new FileFormatException("Unexpected segment indicator: " + c);
+    };
+  }
+
+  private int getSegmentStart(SegmentFieldDefinition<?> field) {
+    return this.getSegmentOffsets().getSegmentOffset(field.getSegmentIndex());
+  }
+
+  @Override
+  public int readUnsignedInt(SegmentFieldDefinition<UnsignedFieldDefinition> field) {
+    int segmentStart = getSegmentStart(field);
+    return switch (segmentStart) {
+      case SegmentOffsets.SEGMENT_NOT_PRESENT -> throw new IllegalStateException("segment not present");
+      case SegmentOffsets.SEGMENT_IS_SPACES -> 0;
+      default -> this.readUnsignedInt(segmentStart, field.getDelegate());
+    };
+  }
+
+  @Override
+  public long readUnsignedLong(SegmentFieldDefinition<UnsignedFieldDefinition> field) {
+    int segmentStart = getSegmentStart(field);
+    return switch (segmentStart) {
+      case SegmentOffsets.SEGMENT_NOT_PRESENT -> throw new IllegalStateException("segment not present");
+      case SegmentOffsets.SEGMENT_IS_SPACES -> 0L;
+      default -> this.readUnsignedLong(segmentStart, field.getDelegate());
+    };
+  }
+
+  @Override
+  public String readTrimmedString(SegmentFieldDefinition<StringFieldDefinition> field) {
+    int segmentStart = getSegmentStart(field);
+    return switch (segmentStart) {
+      case SegmentOffsets.SEGMENT_NOT_PRESENT -> throw new IllegalStateException("segment not present");
+      case SegmentOffsets.SEGMENT_IS_SPACES -> "";
+      default -> this.readTrimmedString(segmentStart, field.getDelegate());
+    };
   }
 
 }

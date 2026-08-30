@@ -7,7 +7,8 @@ import java.util.Objects;
 
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
-import com.github.marschall.fixedlenghtfile.FieldDefinition.SegmentFieldDefinition;
+import com.github.marschall.fixedlenghtfile.SegmentOffsets.ArrayBasedSegmentOffsets;
+import com.github.marschall.fixedlenghtfile.SegmentOffsets.NoSegment;
 
 public final class BufferedReadingLine extends AbstractReadingLine implements CharSequence {
   // ojdbc does not implement transferTo
@@ -18,6 +19,7 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
   private final char[] buffer;
   private final int maximumPrefixLength;
   private int length;
+  private ArrayBasedSegmentOffsets segmentOffsets;
 
   public BufferedReadingLine(FileDefinition fileDefinition) {
     this.fileDefinition = fileDefinition;
@@ -39,17 +41,36 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
     RecordDefinition recordDefinition = this.fileDefinition.getRecordDefinitionFromPrefix(prefix);
     // TODO determine record length
   }
+  
+  @Override
+  protected SegmentOffsets getSegmentOffsets() {
+    return Objects.requireNonNullElse(this.segmentOffsets, NoSegment.INSTANCE);
+  }
 
   @Override
   public int readUnsignedInt(UnsignedFieldDefinition field) {
+    return readUnsignedInt(0, field);
+  }
+  
+  @Override
+  protected int readUnsignedInt(int segmentStart, UnsignedFieldDefinition field) {
     // TODO sign check
-    return Integer.parseInt(this, field.getOffset(), field.getOffset() + field.getLength(), 10);
+    int beginIndex = segmentStart + field.getOffset();
+    int endIndex = beginIndex + field.getLength();
+    return Integer.parseInt(this, beginIndex, endIndex, 10);
   }
 
   @Override
   public long readUnsignedLong(UnsignedFieldDefinition field) {
+    return readUnsignedLong(0, field);
+  }
+  
+  @Override
+  protected long readUnsignedLong(int segmentStart, UnsignedFieldDefinition field) {
     // TODO sign check
-    return Long.parseLong(this, field.getOffset(), field.getOffset() + field.getLength(), 10);
+    int beginIndex = segmentStart + field.getOffset();
+    int endIndex = beginIndex + field.getLength();
+    return Long.parseLong(this, beginIndex, endIndex, 10);
   }
   
   private void boundsCheck(StringFieldDefinition fieldDefinition) {
@@ -92,29 +113,44 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
     }
     return new String(this.buffer, start, end - start);
   }
-
+  
   @Override
-  public int readUnsignedInt(SegmentFieldDefinition<UnsignedFieldDefinition> field) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public long readUnsignedLong(SegmentFieldDefinition<UnsignedFieldDefinition> field) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public String readTrimmedString(SegmentFieldDefinition<StringFieldDefinition> field) {
-    // TODO Auto-generated method stub
-    return null;
+  protected String readTrimmedString(int segmentStart, StringFieldDefinition field) {
+    this.boundsCheck(field);
+    int offset = segmentStart + field.getOffset();
+    int length = field.getLength();
+    if (offset + length > this.length) {
+      throw new IndexOutOfBoundsException();
+    }
+    // initialize with end in case string is all spaces
+    int start = offset + length;
+    for (int i = 0; i < length; i++) {
+      char c = this.buffer[offset + i];
+      if (c != ' ') {
+        start = offset + i;
+        break;
+      }
+    }
+    if (start == offset + length) {
+      // avoid allocation for the common case of an empty string
+      return "";
+    }
+    // search last non space
+    int end = offset + length - 1;
+    for (int l = end; l >= start; l--) {
+      char c = this.buffer[l];
+      if (c != ' ') {
+        end = l;
+        break;
+      }
+    }
+    return new String(this.buffer, start, end - start);
   }
 
   @Override
   public SegmentIndicator readSegmentIndicator(StringFieldDefinition field) {
-    // TODO Auto-generated method stub
-    return null;
+    char c = this.charAt(field.getOffset());
+    return toSegmentIndicator(c);
   }
 
   @Override

@@ -10,6 +10,8 @@ import com.github.marschall.fixedlenghtfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
+import com.github.marschall.fixedlenghtfile.SegmentOffsets.ArrayBasedSegmentOffsets;
+import com.github.marschall.fixedlenghtfile.SegmentOffsets.NoSegment;
 
 public abstract sealed class FixedLengthFile
   permits StatefulFixedLengthFile, StatelessFixedLengthFile {
@@ -31,7 +33,7 @@ public abstract sealed class FixedLengthFile
     RecordDefinition recordDefinition = determineRecordDefinition(lineStart);
     return switch (recordDefinition) {
       case FixedLengthRecordDefinition fixed -> {
-        yield new LineInformation(fixed, determineRecordLength(lineStart, fixed), null);
+        yield new LineInformation(fixed, determineRecordLength(lineStart, fixed), NoSegment.INSTANCE);
       }
       case SegmentedRecordDefinition segmented -> {
         SegmentOffsets segmentOffsets = readSegmentOffsets(lineStart, segmented);
@@ -44,18 +46,10 @@ public abstract sealed class FixedLengthFile
 
   }
 
-  
   protected ReadingLine asLine(long lineStart, LineInformation lineInformation, RecordDefinition recordDefinition) {
     int recordLength = lineInformation.recordLength();
     MemorySegment lineSegment = this.segment.asSlice(lineStart, recordLength);
-    return switch (recordDefinition) {
-      case FixedLengthRecordDefinition _ ->  {
-        yield new FixedLatin1MemorySegmentReadingLine(lineSegment);
-      }
-      case SegmentedRecordDefinition _ -> {
-        yield new SegmentedLatin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
-      }
-    };
+    return new Latin1MemorySegmentReadingLine(lineSegment, lineInformation.segmentOffsets());
   }
 
   protected long advanceBeyondNewline(long position) {
@@ -88,7 +82,7 @@ public abstract sealed class FixedLengthFile
   private SegmentOffsets readSegmentOffsets(long lineStart, SegmentedRecordDefinition recordDefinition) {
     List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
     int offset = recordDefinition.getBaseLength();
-    var segmentOffsets = new SegmentOffsets(segmentDefinitions.size());
+    var segmentOffsets = new ArrayBasedSegmentOffsets(segmentDefinitions.size());
     for (int i = 0; i < segmentDefinitions.size(); i++) {
       var segmentDefinition = segmentDefinitions.get(i);
       StringFieldDefinition segmentIndicatorField = segmentDefinition.getSegmentIndicatorField();

@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import com.github.marschall.fixedlenghtfile.SegmentOffsets.ArrayBasedSegmentOffsets;
+
 class SegmentOffsetsTests {
 
   @Test
   void getSegmentOffset() {
-    var segmentOffsets = new SegmentOffsets(3);
+    var segmentOffsets = new ArrayBasedSegmentOffsets(3);
     segmentOffsets.setSegmentOffset(0, 123);
     segmentOffsets.setSegmentNotPresent(1);
     segmentOffsets.setSegmentIsSpaces(2);
