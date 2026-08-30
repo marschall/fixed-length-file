@@ -42,6 +42,21 @@ import com.github.marschall.fixedlenghtfile.configuration.parser.KtbSpecConverte
  * can be saved. Also fileName and outputPath are absolute file names in the code. Change it to your needs.
  */
 public class KtbSpecConverter {
+  
+
+  private static final Pattern FIELD_PATTERN = Pattern.compile(
+      // field id
+      "(^H[0-9]{2}|^[0-9]{2,3}|^S[0-9]{2}|^T[0-9]{2})"
+      // length and offset
+      + "\\s(\\S*)\\s([0-9]{1,3})\\s[0-9]{1,4}"
+      // data type
+      + "\\s(Num|Char)\\(\\d+\\)"
+      // comment
+      + "\\w?(.*)");
+  private static final Pattern IS_HEADER = Pattern.compile("^H[0-9]{2}\\s.*Num.*|H[0-9]{2}\\s.*Char.*");
+  private static final Pattern IS_D1 = Pattern.compile("^[0-9]{2,3}\\s.*Num.*|[0-9]{2,3}\\s.*Char.*");
+  private static final Pattern IS_D3 = Pattern.compile("^S[0-9]{2}\\s.*Num.*|S[0-9]{2}\\s.*Char.*");
+  private static final Pattern IS_TRAILER = Pattern.compile("^T[0-9]{2}\\s.*Num.*|T[0-9]{2}\\s.*Char.*");
 
   private Map<String, String> recordTypes;
   private Map<String, String> recordTypesMap;
@@ -184,6 +199,7 @@ public class KtbSpecConverter {
     wirteElementWithCharacters(writer, "name", field.name());
     wirteElementWithCharacters(writer, "length", Integer.toString(field.length()));
     wirteElementWithCharacters(writer, "datatype", field.dataType().name() + '(' + field.length + ')');
+    wirteElementWithCharacters(writer, "description", field.description());
 
     writer.writeEndElement(); // field
   }
@@ -214,10 +230,10 @@ public class KtbSpecConverter {
   private void handleLine(String line) {
 
     // exclude some lines like chapters and footer
-    boolean isHeader = line.matches("^H[0-9]{2}\\s.*Num.*|H[0-9]{2}\\s.*Char.*");
-    boolean isD1 = line.matches("^[0-9]{2,3}\\s.*Num.*|[0-9]{2,3}\\s.*Char.*");
-    boolean isD3 = line.matches("^S[0-9]{2}\\s.*Num.*|S[0-9]{2}\\s.*Char.*");
-    boolean isTrailer = line.matches("^T[0-9]{2}\\s.*Num.*|T[0-9]{2}\\s.*Char.*");
+    boolean isHeader = IS_HEADER.matcher(line).matches();
+    boolean isD1 = IS_D1.matcher(line).matches();
+    boolean isD3 = IS_D3.matcher(line).matches();
+    boolean isTrailer = IS_TRAILER.matcher(line).matches();
     if (!isHeader && !isD1 && !isD3 && !isTrailer) {
       // TODO
       return;
@@ -245,15 +261,15 @@ public class KtbSpecConverter {
 
   private void createEnumMember(String line, Consumer<SpecField> fieldConsumer) {
     // parse the line into the needed elements
-    Pattern pattern = Pattern.compile("(^H[0-9]{2}|^[0-9]{2,3}|^S[0-9]{2}|^T[0-9]{2})\\s(\\S*)\\s([0-9]{1,3})\\s[0-9]{1,4}\\s(Num|Char).*");
 
-    Matcher matcher = pattern.matcher(line);
+    Matcher matcher = FIELD_PATTERN.matcher(line);
 
     String id;
     String name;
     String type;
     DataType dataType = null;
     Integer precision;
+    String description = null;
     if (matcher.matches()) {
       id = matcher.group(1);
       name = matcher.group(2);
@@ -263,7 +279,11 @@ public class KtbSpecConverter {
       } else if ("Char".equals(type)) {
         dataType = DataType.CHAR;
       }
-      precision = Integer.valueOf(matcher.group(3));
+      precision = Integer.parseInt(matcher.group(3));
+      description = matcher.group(5);
+      if (description != null) {
+        description = description.trim();
+      }
     } else {
       throw new RuntimeException("how could I just end up here? [" + line + "]");
     }
@@ -273,12 +293,8 @@ public class KtbSpecConverter {
       id = "D" + id;
     }
     
-    SpecField field = new SpecField(id, name, precision, dataType);
+    SpecField field = new SpecField(id, name, precision, dataType, description);
     fieldConsumer.accept(field);
-
-//    return ("  " + "/** ") + id + " " + name + " */\n" + // line 1
-//        "  " + // line 2
-//        id + "(\"" + name + "\", \"" + type + "\", " + precision + ", " + segementReference + "),\n";
   }
 
   static final class SpecRecord {
@@ -354,7 +370,7 @@ public class KtbSpecConverter {
 
   }
   
-  record SpecField(String id, String name, int length, DataType dataType) {
+  record SpecField(String id, String name, int length, DataType dataType, String description) {
     
   }
 
