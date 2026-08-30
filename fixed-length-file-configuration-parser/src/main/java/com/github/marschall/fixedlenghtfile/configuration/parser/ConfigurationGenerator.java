@@ -7,6 +7,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,12 +107,12 @@ public class ConfigurationGenerator {
     constantContainerBuilder.addMethod(definitionBuilder.build());
   }
   
-  private void addSegmentDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition, int segmentIndex, SegmentDefinition segmentDefinition, Map<String, String> segmentIndicatorMap) {
+  private void addSegmentDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition, int segmentIndex, SegmentDefinition segmentDefinition, List<String> segmentIndicators) {
     String fieldList = segmentDefinition.getFields().stream()
         .map(Field::id)
         .collect(joining(", "));
     // TODO nicer model
-    String segmentIndicatorField = recordDefinition.getName() + "." + segmentIndicatorMap.get("SEG-IND-" + (segmentIndex + 1));
+    String segmentIndicatorField = recordDefinition.getName() + "." + segmentIndicators.get(segmentIndex);
     MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
         .returns(SEGMENT_DEFINITION)
         .addModifiers(PUBLIC, STATIC)
@@ -122,16 +123,14 @@ public class ConfigurationGenerator {
   private void addSegments(RecordDefinition recordDefinition, ClassName interfaceDefinitionClassName, TypeSpec.Builder recordSpecBuilder) {
     int segmentIndex = 0;
     int segmentCount = recordDefinition.getSegments().size();
-    Map<String, String> segmentIndicatorMap = HashMap.newHashMap(segmentCount);
+    List<String> segmentIndicators = new ArrayList<>(segmentCount);
     for (Field field : recordDefinition.getFields().reversed()) {
-      if (field.name().startsWith("SEG-IND-")) {
-        segmentIndicatorMap.put(field.name(), field.id());
-      }
-      if (segmentIndicatorMap.size() == segmentCount) {
-        // TODO
+      segmentIndicators.add(field.id());
+      if (segmentIndicators.size() == segmentCount) {
         break;
       }
     }
+    segmentIndicators = segmentIndicators.reversed();
     for (SegmentDefinition segment : recordDefinition.getSegments()) {
       TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + (segmentIndex + 1)))
               .addModifiers(PUBLIC, STATIC, FINAL);
@@ -139,7 +138,7 @@ public class ConfigurationGenerator {
         FieldSpec fieldSpec = buildSegmentFieldSpec(segmentIndex, field);
         segmentSpecBuilder.addField(fieldSpec);
       }
-      addSegmentDefinitionMethod(segmentSpecBuilder, recordDefinition, segmentIndex, segment, segmentIndicatorMap);
+      addSegmentDefinitionMethod(segmentSpecBuilder, recordDefinition, segmentIndex, segment, segmentIndicators);
       recordSpecBuilder.addType(segmentSpecBuilder.build());
       segmentIndex += 1;
     }

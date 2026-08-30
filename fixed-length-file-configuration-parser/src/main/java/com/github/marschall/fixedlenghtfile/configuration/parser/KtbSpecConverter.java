@@ -33,11 +33,13 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import com.github.marschall.fixedlenghtfile.configuration.parser.KtbSpecConverter.SpecField;
+
 /**
  * Converts the SpecKtbPdf.txt document into KTB enum templates. For a new version copy the right part out of the specification. In the templates for the detail record add the
- * dependencies to the segments. Then copy the classes. !This code is very fragile, every change in the spec leads to an abort! Also the last element of a record type is in the
- * wrong file. Therefore template class files are generated as text files. These files can be diffed with the real java files. Then copy the new elements. This helps especially
- * when lots of new fields are added and lots of typing work can be saved. Also fileName and outputPath are absolute file names in the code. Change it to your needs.
+ * dependencies to the segments. Then copy the classes. !This code is very fragile, every change in the spec leads to an abort! Therefore template class files are generated as
+ * text files. These files can be diffed with the real java files. Then copy the new elements. This helps especially when lots of new fields are added and lots of typing work
+ * can be saved. Also fileName and outputPath are absolute file names in the code. Change it to your needs.
  */
 public class KtbSpecConverter {
 
@@ -56,7 +58,6 @@ public class KtbSpecConverter {
   private void generateEnums() throws Exception {
     String fileName = "src/test/resources/reference/SpecKtbPdf.txt";
     Path path = Paths.get(fileName);
-    // List<String> lines = Files.readAllLines(path, Charset.defaultCharset());
     List<String> lines = Files.readAllLines(path, ISO_8859_1);
 
     Path outputPath = null;
@@ -67,16 +68,22 @@ public class KtbSpecConverter {
         if (outputPath != null) {
           lastLine.append(line);
         }
+        if (!lastLine.isEmpty() && this.fieldConsumer != null) {
+          // add to the last record before starting the new one
+          handleLine(lastLine.toString());
+          lastLine.setLength(0);
+        }
         SpecRecord record = this.records.get(this.recordTypesMap.get(line));
         this.fieldConsumer = record::addField;
       } else {
         // get the broken lines together
         if (isNewLine(line)) {
           handleLine(lastLine.toString());
-          lastLine = new StringBuilder(line);
+          lastLine.setLength(0);
+          lastLine.append(line);
         } else {
-          if (lastLine.length() != 0 && !lastLine.toString().endsWith("_") && !lastLine.toString().endsWith("-")) {
-            lastLine.append(" ");
+          if (!endsWith(lastLine, '_') && !endsWith(lastLine, '-')) {
+            lastLine.append(' ');
           }
           lastLine.append(line);
         }
@@ -86,6 +93,10 @@ public class KtbSpecConverter {
     handleLine(lastLine.toString());
     writeOutput();
     System.out.println("finished " + LocalDateTime.now());
+  }
+  
+  private static boolean endsWith(StringBuilder builder, char c) {
+    return !builder.isEmpty() && builder.charAt(builder.length() - 1) == c;
   }
 
   private void writeOutput() throws XMLStreamException, IOException, TransformerFactoryConfigurationError, TransformerException {
@@ -149,6 +160,16 @@ public class KtbSpecConverter {
     
     if (record.hasSegments()) {
       for (SpecSegment segment : record.getSegments()) {
+        writer.writeStartElement("recordSegment");
+        wirteElementWithCharacters(writer, "name", segment.getName());
+        writer.writeStartElement("fields");
+        
+        for (SpecField field : segment.getFields()) {
+          writeField(writer, field);
+        }
+        
+        writer.writeEndElement(); // fields
+        writer.writeEndElement(); // recordSegment
         
       }
     }
@@ -206,24 +227,6 @@ public class KtbSpecConverter {
 
 
     String segementReference = null;
-//    if (isHeader) {
-//      SpecRecord record = this.records.get("HD");
-//      fieldConsumer = record::addField;
-//    }
-//    if (isD1 && segementReference.equals("null")) {
-//      SpecRecord record = this.records.get("D1");
-//      fieldConsumer = record::addField;
-//    }
-//    if (isD3) {
-//      SpecRecord record = this.records.get("D3");
-//      fieldConsumer = record::addField;
-//    }
-//    if (isTrailer) {
-//      SpecRecord record = this.records.get("TR");
-//      fieldConsumer = record::addField;
-//    }
-    
-//    Consumer<SpecField> fieldConsumer = null;
     if (line.contains("SEGMENT Details für KI-Bank")) {
       segementReference = "E50";
     } else if (line.contains("SEGMENT Rückabwicklung")) {
@@ -233,8 +236,6 @@ public class KtbSpecConverter {
     } else if (line.contains("SEGMENT für EMV-basierende Transaktionen")) {
       segementReference = "E53";
     } else if (line.contains("Sammel-Record")) {
-      // TODO
-//      segementReference = "null";
     }
     if (segementReference != null) {
       SpecSegment segment = this.segments.get(segementReference);
@@ -334,8 +335,21 @@ public class KtbSpecConverter {
       this.fields = new ArrayList<>();
     }
 
+    List<SpecField> getFields() {
+      return this.fields;
+    }
+
+    String getName() {
+      return this.name;
+    }
+
     void addField(SpecField field) {
       this.fields.add(field);
+    }
+
+    @Override
+    public String toString() {
+      return "Segment: " + this.name;
     }
 
   }
