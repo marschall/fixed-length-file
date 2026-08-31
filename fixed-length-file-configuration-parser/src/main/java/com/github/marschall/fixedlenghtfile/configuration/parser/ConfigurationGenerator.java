@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -42,6 +43,16 @@ public class ConfigurationGenerator {
   private static final ClassName FILE_DEFINITION = ClassName.get("com.github.marschall.fixedlenghtfile", "FileDefinition");
   private static final ClassName LIST = ClassName.get("java.util", "List");
 
+  private final SegmentIndicatorFieldIdStrategy segmentIndicatorFieldIdStrategy;
+
+  public ConfigurationGenerator(SegmentIndicatorFieldIdStrategy segmentIndicatorFieldIdStrategy) {
+    this.segmentIndicatorFieldIdStrategy = Objects.requireNonNull(segmentIndicatorFieldIdStrategy, "segmentIndicatorFieldIdStrategy");
+  }
+  
+  public ConfigurationGenerator() {
+    this(SegmentIndicatorFieldIdStrategy.trailingFieldIds());
+  }
+
   public void generateTo(InterfaceVersion currentVersion, Set<String> interestingRecordTypes, Path interfacePath, Path outputDirectory, String packageName)
       throws XPathExpressionException, ParserConfigurationException, SAXException, IOException {
     ConfigurationParser parser = new ConfigurationParser(currentVersion);
@@ -49,7 +60,7 @@ public class ConfigurationGenerator {
     String className = "InterfaceDefinition" + currentVersion.toInterfaceString();
     generate(recordDefinitions, outputDirectory, packageName, className);
   }
-  
+
   private void generate(List<RecordDefinition> recordDefintions, Path outputDirectory, String packageName, String className) throws IOException {
     TypeSpec.Builder constantContainerBuilder = TypeSpec.classBuilder(ClassName.get(packageName, className))
         .addModifiers(PUBLIC, FINAL);
@@ -122,15 +133,7 @@ public class ConfigurationGenerator {
 
   private void addSegments(RecordDefinition recordDefinition, ClassName interfaceDefinitionClassName, TypeSpec.Builder recordSpecBuilder) {
     int segmentIndex = 0;
-    int segmentCount = recordDefinition.getSegments().size();
-    List<String> segmentIndicators = new ArrayList<>(segmentCount);
-    for (Field field : recordDefinition.getFields().reversed()) {
-      segmentIndicators.add(field.id());
-      if (segmentIndicators.size() == segmentCount) {
-        break;
-      }
-    }
-    segmentIndicators = segmentIndicators.reversed();
+    List<String> segmentIndicators = this.segmentIndicatorFieldIdStrategy.getSegmentIndicatorFieldIds(recordDefinition);
     for (SegmentDefinition segment : recordDefinition.getSegments()) {
       TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + (segmentIndex + 1)))
               .addModifiers(PUBLIC, STATIC, FINAL);
@@ -143,6 +146,29 @@ public class ConfigurationGenerator {
       segmentIndex += 1;
     }
   }
+
+  @FunctionalInterface
+  interface SegmentIndicatorFieldIdStrategy {
+
+    List<String> getSegmentIndicatorFieldIds(RecordDefinition recordDefinition);
+
+    static SegmentIndicatorFieldIdStrategy trailingFieldIds() {
+      return recordDefinition -> getTrailingFieldsId(recordDefinition, recordDefinition.getSegments().size());
+    }
+
+    private static List<String> getTrailingFieldsId(RecordDefinition recordDefinition, int count) {
+      List<String> segmentIndicators = new ArrayList<>(count);
+      for (Field field : recordDefinition.getFields().reversed()) {
+        segmentIndicators.add(field.id());
+        if (segmentIndicators.size() == count) {
+          break;
+        }
+      }
+      return segmentIndicators.reversed();
+    }
+
+  }
+
 
   private static FieldSpec buildFieldSpec(Field field) {
     String fieldId = field.id();
@@ -175,11 +201,6 @@ public class ConfigurationGenerator {
       case NUM -> UNSIGNED_FIELD_DEFINITION;
       case SNUM -> SIGNED_FIELD_DEFINITION;
     };
-  }
-
-  public static void main(String[] args) {
-    // TODO Auto-generated method stub
-
   }
 
 }

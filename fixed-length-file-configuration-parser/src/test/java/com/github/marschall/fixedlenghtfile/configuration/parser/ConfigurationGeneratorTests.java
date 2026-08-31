@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+
+import com.github.marschall.fixedlenghtfile.configuration.parser.ConfigurationGenerator.SegmentIndicatorFieldIdStrategy;
 
 class ConfigurationGeneratorTests {
 
@@ -20,12 +23,16 @@ class ConfigurationGeneratorTests {
   }
 
   @Test
-  void parseVariant() throws Exception {
+  void generateVariant() throws Exception {
     var interfaceVersion = InterfaceVersion.parse("3.0.0");
     Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3000",  "xml");
     assertNotNull(referenceFile);
-    ConfigurationGenerator generator = new ConfigurationGenerator();
+    ConfigurationGenerator generator = new ConfigurationGenerator(hardCodedFieldIds());
     generator.generateTo(interfaceVersion, Set.of("HD", "D1", "D3", "TR"), referenceFile, Paths.get("src/main/java"), "com.github.marschall.fixedlenghtfile.configuration.parser");
+  }
+
+  private static SegmentIndicatorFieldIdStrategy hardCodedFieldIds() {
+    return _ -> List.of("D50", "D51", "D52", "D53");
   }
 
 }

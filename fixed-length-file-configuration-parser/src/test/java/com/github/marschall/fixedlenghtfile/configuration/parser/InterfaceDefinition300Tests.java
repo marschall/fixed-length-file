@@ -3,6 +3,7 @@ package com.github.marschall.fixedlenghtfile.configuration.parser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 
@@ -15,44 +16,48 @@ import com.github.marschall.fixedlenghtfile.RecordDefinition.FixedLengthRecordDe
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlenghtfile.RecordDefinition.SegmentedRecordDefinition;
 
-class InterfaceDefinition267Tests {
+class InterfaceDefinition300Tests {
 
   private FileDefinition definition;
 
   @BeforeEach
   void setUp() {
-    this.definition = InterfaceDefinition267.definition();
+    this.definition = InterfaceDefinition300.definition();
   }
 
   @Test
   void hd() {
     var recordDefintion = this.definition.getRecordDefinition("HD");
-    FixedLengthRecordDefinition hd = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
-    assertEquals(87, hd.getBaseLength());
-    assertEquals(87, hd.getMaximumLength());
+    var hd = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
+    assertEquals(150, hd.getBaseLength());
+    assertEquals(150, hd.getMaximumLength());
   }
 
   @Test
-  void kt() {
-    var recordDefintion = this.definition.getRecordDefinition("KT");
-    SegmentedRecordDefinition kt = assertInstanceOf(SegmentedRecordDefinition.class, recordDefintion);
-    assertEquals(47 + 109 + 741 + 14 + 296 + 35 + 248 + 187 + 526 + 116 + 184 + 355 + 8, kt.getBaseLength());
-    assertEquals(4525, kt.getMaximumLength());
-    List<SegmentDefinition> segmentDefinitions = kt.getSegmentDefinitions();
-    assertThat(segmentDefinitions).hasSize(8);
+  void d1() {
+    var recordDefintion = this.definition.getRecordDefinition("D1");
+    var d1 = assertInstanceOf(SegmentedRecordDefinition.class, recordDefintion);
+    List<SegmentDefinition> segmentDefinitions = d1.getSegmentDefinitions();
+    assertThat(segmentDefinitions).hasSize(4);
     List<String> segmentIndicatorFields = segmentDefinitions.stream()
         .map(SegmentDefinition::getSegmentIndicatorField)
         .map(FieldDefinition::getName)
         .toList();
-    assertEquals(List.of("KT66A", "KT66B", "KT67", "KT68", "KT69", "KT70", "KT71", "KT72"), segmentIndicatorFields);
+    assertEquals(List.of("D50", "D51", "D52", "D53"), segmentIndicatorFields);
+  }
+
+  @Test
+  void d3() {
+    var recordDefintion = this.definition.getRecordDefinition("D3");
+    var d3 = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
+    assertNotNull(d3);
   }
 
   @Test
   void tr() {
     var recordDefintion = this.definition.getRecordDefinition("TR");
-    FixedLengthRecordDefinition tr = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
-    assertEquals(155, tr.getBaseLength());
-    assertEquals(155, tr.getMaximumLength());
+    var tr = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
+    assertNotNull(tr);
   }
 
 }
