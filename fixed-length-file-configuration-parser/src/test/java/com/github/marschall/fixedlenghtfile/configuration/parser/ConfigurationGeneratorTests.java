@@ -25,7 +25,7 @@ class ConfigurationGeneratorTests {
   @Test
   void generateVariant() throws Exception {
     var interfaceVersion = InterfaceVersion.parse("3.0.0");
-    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3000",  "xml");
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3006",  "xml");
     assertNotNull(referenceFile);
     ConfigurationGenerator generator = new ConfigurationGenerator(hardCodedFieldIds());
     generator.generateTo(interfaceVersion, Set.of("HD", "D1", "D3", "TR"), referenceFile, Paths.get("src/main/java"), "com.github.marschall.fixedlenghtfile.configuration.parser");

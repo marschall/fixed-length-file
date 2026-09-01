@@ -3,7 +3,6 @@ package com.github.marschall.fixedlenghtfile.configuration.parser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 
@@ -29,8 +28,8 @@ class InterfaceDefinition300Tests {
   void hd() {
     var recordDefintion = this.definition.getRecordDefinition("HD");
     var hd = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
-    assertEquals(150, hd.getBaseLength());
-    assertEquals(150, hd.getMaximumLength());
+    assertEquals(149, hd.getBaseLength());
+    assertEquals(149, hd.getMaximumLength());
   }
 
   @Test
@@ -50,14 +49,16 @@ class InterfaceDefinition300Tests {
   void d3() {
     var recordDefintion = this.definition.getRecordDefinition("D3");
     var d3 = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
-    assertNotNull(d3);
+    assertEquals(305, d3.getBaseLength());
+    assertEquals(305, d3.getMaximumLength());
   }
 
   @Test
   void tr() {
     var recordDefintion = this.definition.getRecordDefinition("TR");
     var tr = assertInstanceOf(FixedLengthRecordDefinition.class, recordDefintion);
-    assertNotNull(tr);
+    assertEquals(227, tr.getBaseLength());
+    assertEquals(227, tr.getMaximumLength());
   }
 
 }
