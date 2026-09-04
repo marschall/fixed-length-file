@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.SegmentFieldDefinition;
+import com.github.marschall.fixedlengthfile.FileDefinition.Version;
 import com.github.marschall.fixedlengthfile.FixedLengthFileParserTests.SampleWithRecordType.F;
 import com.github.marschall.fixedlengthfile.FixedLengthFileParserTests.SampleWithRecordType.H;
 import com.github.marschall.fixedlengthfile.FixedLengthFileParserTests.SampleWithRecordType.R;
@@ -26,7 +27,7 @@ class FixedLengthFileParserTests {
   static final class SampleWithRecordType {
 
     static FileDefinition definition() {
-      return new FileDefinition(List.of(H.definition(), R.definition(), F.definition()));
+      return new FileDefinition(Version.of(1, 0), List.of(H.definition(), R.definition(), F.definition()));
     }
 
     static final class H {

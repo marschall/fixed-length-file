@@ -3,7 +3,10 @@ package com.github.marschall.fixedlengthfile.configuration.parser;
  * A version made up of up to 3 integer components separated by {@code '.'}
  * and an optional revision preceeded by {@code '.'},.
  */
-abstract sealed class InterfaceVersion implements Comparable<InterfaceVersion> {
+
+import com.github.marschall.fixedlengthfile.FileDefinition;
+
+public abstract sealed class InterfaceVersion implements Comparable<InterfaceVersion> {
   
   static final class WorkingVersion extends InterfaceVersion {
 
@@ -30,7 +33,7 @@ abstract sealed class InterfaceVersion implements Comparable<InterfaceVersion> {
     }
 
   }
-
+  
   static final class FinalVersion extends InterfaceVersion {
 
     FinalVersion(byte major, byte minor, byte micro) {
@@ -167,11 +170,15 @@ abstract sealed class InterfaceVersion implements Comparable<InterfaceVersion> {
   public int hashCode() {
     return ((((31 + this.major) * 31) + this.minor) * 31) + this.micro;
   }
-  
+
   public String toInterfaceString() {
     int minorInt = Byte.toUnsignedInt(this.minor);
     return  Integer.toString(Byte.toUnsignedInt(this.major))
-         + (minorInt < 10 ? "0" : "") + Integer.toString(minorInt);
+        + (minorInt < 10 ? "0" : "") + Integer.toString(minorInt);
+  }
+  
+  FileDefinition.Version toFileDefinitionVersion() {
+    return FileDefinition.Version.of(this.major, this.minor);
   }
 
   @Override

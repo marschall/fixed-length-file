@@ -23,10 +23,13 @@ import org.openjdk.jol.info.ClassLayout;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.FileDefinition.Version;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
 
 class ReadingLineTests {
 
+  private static final FileDefinition FILE_DEFINITION2 = new FileDefinition(Version.of(1, 0), List.of(R2.definition()));
+  private static final FileDefinition FILE_DEFINITION1 = new FileDefinition(Version.of(1, 0), List.of(R1.definition()));
   private static final String LINE2 = "RFi\u00E9ld2Fi\u00E9l    \u00E9ld4  \u00E9ld       34";
   private static final String LINE1 = "RFi\u00E9ld1Fi\u00E9ld  i\u00E9ld3  \u00E9l        12";
 
@@ -84,7 +87,7 @@ class ReadingLineTests {
 
   @Test
   void recordDefinitionLength() {
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var recordDefinition = fileDefinition.getRecordDefinition("R");
     assertNotNull(recordDefinition);
     assertEquals(33, recordDefinition.getMaximumLength());
@@ -93,7 +96,7 @@ class ReadingLineTests {
   @Test
   void readLines() throws IOException {
 
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var path = Path.of("src/test/resources/sample.txt");
 
     FixedLengthFileParser.parseFile(fileDefinition, path, file -> {
@@ -125,7 +128,7 @@ class ReadingLineTests {
 
   @Test
   void asReader_readAllAsString() throws IOException {
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var path = Path.of("src/test/resources/sample.txt");
 
     FixedLengthFileParser.parseFile(fileDefinition, path, file -> {
@@ -159,7 +162,7 @@ class ReadingLineTests {
 
   @Test
   void asReader_read() throws IOException {
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var path = Path.of("src/test/resources/sample.txt");
     
     FixedLengthFileParser.parseFile(fileDefinition, path, file -> {
@@ -203,7 +206,7 @@ class ReadingLineTests {
 
   @Test
   void bufferedReadingLine1() throws IOException {
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var line = new BufferedReadingLine(fileDefinition);
     line.initializeFrom(new StringReader(LINE1));
 
@@ -217,7 +220,7 @@ class ReadingLineTests {
 
   @Test
   void bufferedReadingLine2() throws IOException {
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var line = new BufferedReadingLine(fileDefinition);
     line.initializeFrom(new StringReader(LINE2));
 
@@ -235,7 +238,7 @@ class ReadingLineTests {
 
     var path = Path.of("src/test/resources/sample_high_level_types");
 
-    FileDefinition highLevelDefinition = new FileDefinition(List.of(R2.definition()));
+    FileDefinition highLevelDefinition = FILE_DEFINITION2;
 
     FixedLengthFileParser.parseFile(highLevelDefinition, path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
@@ -257,7 +260,7 @@ class ReadingLineTests {
   @Disabled
   @Test
   void objectLayout() throws IOException {
-    var fileDefinition = new FileDefinition(List.of(R1.definition()));
+    var fileDefinition = FILE_DEFINITION1;
     var path = Path.of("src/test/resources/sample.txt");
 
     FixedLengthFileParser.parseFile(fileDefinition, path, file -> {

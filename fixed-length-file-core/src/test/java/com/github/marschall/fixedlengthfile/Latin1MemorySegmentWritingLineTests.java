@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.FileDefinition.Version;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
 
 class Latin1MemorySegmentWritingLineTests {
@@ -41,7 +42,7 @@ class Latin1MemorySegmentWritingLineTests {
 
   @Test
   void writeFirstLine() throws IOException {
-    FileDefinition fileDefinition = new FileDefinition(List.of(R.definition()));
+    FileDefinition fileDefinition = new FileDefinition(Version.of(1, 0), List.of(R.definition()));
 
     var recordDefinition = fileDefinition.getRecordDefinition("R");
 
@@ -60,7 +61,7 @@ class Latin1MemorySegmentWritingLineTests {
 
   @Test
   void writeEmptyLine() throws IOException {
-    FileDefinition fileDefinition = new FileDefinition(List.of(R.definition()));
+    FileDefinition fileDefinition = new FileDefinition(Version.of(1, 0), List.of(R.definition()));
     
     var recordDefinition = fileDefinition.getRecordDefinition("R");
     

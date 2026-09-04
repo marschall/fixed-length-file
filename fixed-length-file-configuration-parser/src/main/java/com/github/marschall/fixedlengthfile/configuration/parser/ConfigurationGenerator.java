@@ -18,6 +18,7 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.xml.sax.SAXException;
 
+import com.github.marschall.fixedlengthfile.FileDefinition.Version;
 import com.github.marschall.fixedlengthfile.configuration.parser.RecordDefinitionFragment.RecordDefinition;
 import com.github.marschall.fixedlengthfile.configuration.parser.RecordDefinitionFragment.SegmentDefinition;
 import com.palantir.javapoet.ClassName;
@@ -30,15 +31,18 @@ import com.palantir.javapoet.TypeSpec;
 
 public class ConfigurationGenerator {
   
-  private static final ClassName SIGNED_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "FieldDefinition", "OffsetFieldDefinition", "SignedFieldDefinition");
-  private static final ClassName UNSIGNED_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "FieldDefinition", "OffsetFieldDefinition", "UnsignedFieldDefinition");
-  private static final ClassName STRING_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "FieldDefinition", "OffsetFieldDefinition", "StringFieldDefinition");
-  private static final ClassName SEGMENT_FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "FieldDefinition", "SegmentFieldDefinition");
-  private static final ClassName FIXED_LENGTH_RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "RecordDefinition", "FixedLengthRecordDefinition");
-  private static final ClassName SEGMENTED_RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "RecordDefinition", "SegmentedRecordDefinition");
-  private static final ClassName RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "RecordDefinition");
-  private static final ClassName SEGMENT_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "RecordDefinition", "SegmentDefinition");
+  private static final ClassName FIELD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "FieldDefinition");
+  private static final ClassName SIGNED_FIELD_DEFINITION = FIELD_DEFINITION.nestedClass("OffsetFieldDefinition").nestedClass("SignedFieldDefinition");
+  private static final ClassName UNSIGNED_FIELD_DEFINITION = FIELD_DEFINITION.nestedClass("OffsetFieldDefinition").nestedClass("UnsignedFieldDefinition");
+  private static final ClassName STRING_FIELD_DEFINITION = FIELD_DEFINITION.nestedClass("OffsetFieldDefinition").nestedClass("StringFieldDefinition");
+  private static final ClassName SEGMENT_FIELD_DEFINITION = FIELD_DEFINITION.nestedClass("SegmentFieldDefinition");
+  
   private static final ClassName FILE_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "FileDefinition");
+  private static final ClassName RECORD_DEFINITION = ClassName.get("com.github.marschall.fixedlengthfile", "RecordDefinition");
+  private static final ClassName FIXED_LENGTH_RECORD_DEFINITION = RECORD_DEFINITION.nestedClass("FixedLengthRecordDefinition");
+  private static final ClassName SEGMENTED_RECORD_DEFINITION = RECORD_DEFINITION.nestedClass("SegmentedRecordDefinition");
+  private static final ClassName SEGMENT_DEFINITION = RECORD_DEFINITION.nestedClass("SegmentDefinition");
+  private static final ClassName FILE_DEFINITION_VERSION = FILE_DEFINITION.nestedClass("Version");
   private static final ClassName LIST = ClassName.get("java.util", "List");
 
   private final SegmentIndicatorFieldIdStrategy segmentIndicatorFieldIdStrategy;
@@ -56,10 +60,10 @@ public class ConfigurationGenerator {
     ConfigurationParser parser = new ConfigurationParser(currentVersion);
     List<RecordDefinition> recordDefinitions = parser.parse(interfacePath, interestingRecordTypes);
     String className = "InterfaceDefinition" + currentVersion.toInterfaceString();
-    generate(recordDefinitions, outputDirectory, packageName, className);
+    generate(currentVersion, recordDefinitions, outputDirectory, packageName, className);
   }
 
-  private void generate(List<RecordDefinition> recordDefintions, Path outputDirectory, String packageName, String className) throws IOException {
+  private void generate(InterfaceVersion currentVersion, List<RecordDefinition> recordDefintions, Path outputDirectory, String packageName, String className) throws IOException {
     TypeSpec.Builder constantContainerBuilder = TypeSpec.classBuilder(ClassName.get(packageName, className))
         .addModifiers(PUBLIC, FINAL);
 
@@ -78,7 +82,7 @@ public class ConfigurationGenerator {
       }
       constantContainerBuilder.addType(recordSpecBuilder.build());
     }
-    addFileDefinitionMethod(constantContainerBuilder, recordDefintions);
+    addFileDefinitionMethod(currentVersion, constantContainerBuilder, recordDefintions);
 
     JavaFile javaFile = JavaFile.builder(packageName, constantContainerBuilder.build())
         .build();
@@ -103,16 +107,20 @@ public class ConfigurationGenerator {
     }
     recordSpecBuilder.addMethod(definitionBuilder.build());
   }
-  
-  private void addFileDefinitionMethod(TypeSpec.Builder constantContainerBuilder, List<RecordDefinition> recordDefintions) {
+
+  private void addFileDefinitionMethod(InterfaceVersion currentVersion, TypeSpec.Builder constantContainerBuilder, List<RecordDefinition> recordDefintions) {
     String recordDefinitionList = recordDefintions.stream()
         .map(RecordDefinition::getName)
         .map(recordName -> recordName + ".definition()")
         .collect(joining(", "));
+    Version fileDefinitionVersion = currentVersion.toFileDefinitionVersion();
     MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
         .returns(FILE_DEFINITION)
         .addModifiers(PUBLIC, STATIC)
-        .addStatement("return new $T($T.of(" + recordDefinitionList + "))", FILE_DEFINITION, LIST);
+        .addStatement("return new $T($T.of($L, $L), $T.of(" + recordDefinitionList + "))",
+            FILE_DEFINITION,
+            FILE_DEFINITION_VERSION, fileDefinitionVersion.getMajor(), fileDefinitionVersion.getMinor(),
+            LIST);
     constantContainerBuilder.addMethod(definitionBuilder.build());
   }
   

@@ -88,8 +88,7 @@ public abstract sealed class FieldDefinition {
 
     }
   }
-  
-  
+
   public static final class SegmentFieldDefinition<F extends OffsetFieldDefinition> extends FieldDefinition {
 
     private final F delegate;
@@ -104,7 +103,7 @@ public abstract sealed class FieldDefinition {
     public int getSegmentIndex() {
       return this.segmentIndex;
     }
-    
+
     @Override
     int getLength() {
       return this.delegate.getLength();

@@ -9,8 +9,10 @@ public final class FileDefinition {
 
   private final List<RecordDefinition> recordDefinitions;
   private final Map<String, RecordDefinition> recordDefinitionMap;
+  private final Version version;
 
-  public FileDefinition(List<RecordDefinition> recordDefinitions) {
+  public FileDefinition(Version version, List<RecordDefinition> recordDefinitions) {
+    this.version = Objects.requireNonNull(version, "version");
     Objects.requireNonNull(recordDefinitions, "recordDefinitions");
     this.recordDefinitions = recordDefinitions;
     this.recordDefinitionMap = buildRecordDefinitionMap(recordDefinitions);
@@ -24,6 +26,10 @@ public final class FileDefinition {
     return map;
   }
 
+  public Version getVersion() {
+    return this.version;
+  }
+
   List<RecordDefinition> getRecordDefinitions() {
     return this.recordDefinitions;
   }
@@ -31,7 +37,7 @@ public final class FileDefinition {
   public RecordDefinition getRecordDefinition(String recordType) {
     return this.recordDefinitionMap.get(recordType);
   }
-  
+
   public RecordDefinition getRecordDefinitionFromPrefix(String prefix) {
     // first try direct lookup
     RecordDefinition recordDefinition = this.recordDefinitionMap.get(prefix);
@@ -64,6 +70,54 @@ public final class FileDefinition {
       maximum = Math.max(maximum, prefix.length());
     }
     return maximum;
+  }
+
+  public static final class Version {
+
+    private final byte major;
+    private final byte minor;
+
+    private Version(byte major, byte minor) {
+      this.major = major;
+      this.minor = minor;
+    }
+
+    public static Version of(int major, int minor) {
+      if (major < 0 || major > Byte.MAX_VALUE) {
+        throw new IllegalArgumentException();
+      }
+      if (minor < 0 || minor > Byte.MAX_VALUE) {
+        throw new IllegalArgumentException();
+      }
+      return new Version((byte) major, (byte) minor);
+    }
+
+    public int getMajor() {
+      return this.major;
+    }
+
+    public byte getMinor() {
+      return this.minor;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (!(obj instanceof Version)) {
+        return false;
+      }
+      Version other = (Version) obj;
+      return (this.major == other.major)
+          && (this.minor == other.minor);
+    }
+
+    @Override
+    public int hashCode() {
+      return ((31 + this.major) * 31) + this.minor;
+    }
+
   }
 
 }
