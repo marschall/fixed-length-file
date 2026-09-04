@@ -30,7 +30,7 @@ public final class FileDefinition {
     return this.version;
   }
 
-  List<RecordDefinition> getRecordDefinitions() {
+  public List<RecordDefinition> getRecordDefinitions() {
     return this.recordDefinitions;
   }
 

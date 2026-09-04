@@ -1,4 +1,4 @@
-package com.github.marschall.fixedlengthfile;
+package com.github.marschall.fixedlengthfile.configuration.parser;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
@@ -16,14 +16,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.SignedFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.FileDefinition;
+import com.github.marschall.fixedlengthfile.Latin1MemorySegmentWritingLine;
+import com.github.marschall.fixedlengthfile.RecordDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
+import com.github.marschall.fixedlengthfile.SegmentIndicator;
+import com.github.marschall.fixedlengthfile.WritingLine;
+import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.KT;
+import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.HD;
+import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.TR;
 
 public final class EmptyFileGenerator {
 
@@ -50,30 +59,84 @@ public final class EmptyFileGenerator {
     }
   }
 
-  private void writeLines(int lineCount, MemorySegment segment) {
-    List<RecordDefinition> recordDefinitions = this.fileDefinition.getRecordDefinitions();
-    long lineStart = 0L;
+  static final class State {
 
-    RecordDefinition header = recordDefinitions.getFirst();
-    lineStart = this.writeEmptyLine(segment, lineStart, header);
+    private int currentRecordSequenceNumber;
+    private int lineStart;
 
-    RecordDefinition record = recordDefinitions.get(1);
-    // TODO make copy
-    for (int i = 0; i < lineCount; i++) {
-      lineStart = this.writeEmptyLine(segment, lineStart, record);
+    State() {
+      this.currentRecordSequenceNumber = 0;
+      this.lineStart = 0;
     }
 
-    RecordDefinition trailer = recordDefinitions.getLast();
-    lineStart = this.writeEmptyLine(segment, lineStart, trailer);
+    int getLineStart() {
+      return this.lineStart;
+    }
+
+    int getCurrentRecordSequenceNumber() {
+      return this.currentRecordSequenceNumber;
+    }
+
+    void addLine(int length) {
+      this.lineStart += length;
+      this.currentRecordSequenceNumber += 1;
+    }
+
   }
 
-  private long writeEmptyLine(MemorySegment segment, long lineStart, RecordDefinition definition) {
-    long lineLength = switch (definition) {
-      case FixedLengthRecordDefinition fixed -> writeEmptyFixedLine(segment, lineStart, fixed);
-      case SegmentedRecordDefinition segmented -> writeEmptyFixedLine(segment, lineStart, segmented);
-    };
-    this.crLf(segment, lineStart + lineLength);
-    return lineStart + lineLength + 2;
+  private void writeLines(int lineCount, MemorySegment segment) {
+    List<RecordDefinition> recordDefinitions = this.fileDefinition.getRecordDefinitions();
+
+    var state = new State();
+    RecordDefinition header = recordDefinitions.getFirst();
+    writeHeader(segment, state, (FixedLengthRecordDefinition) header);
+
+    RecordDefinition record = recordDefinitions.get(1);
+    writeRecords(segment, state, (SegmentedRecordDefinition) record, lineCount);
+
+    RecordDefinition trailer = recordDefinitions.getLast();
+    writeTrailer(segment, state, (FixedLengthRecordDefinition) trailer);
+  }
+  
+  private void writeRecords(MemorySegment segment, State state, SegmentedRecordDefinition definition, int count) {
+
+    List<SegmentDefinition> segmentDefinitions = definition.getSegmentDefinitions();
+    Set<StringFieldDefinition> segmentIndicatorFields = HashSet.newHashSet(segmentDefinitions.size());
+    for (SegmentDefinition segmentDefinition : segmentDefinitions) {
+      segmentIndicatorFields.add(segmentDefinition.getSegmentIndicatorField());
+    }
+    for (int i = 0; i < count; i++) {
+      this.writeRecord(segment, state, definition, segmentIndicatorFields);
+    }
+    
+  }
+
+  private void writeRecord(MemorySegment segment, State state, SegmentedRecordDefinition definition, Set<StringFieldDefinition> segmentIndicatorFields) {
+    int lineLength = writeEmptySegmentedLine(segment, state, definition, segmentIndicatorFields, line -> {
+      line.writeString(KT.KT01, "KT");
+      line.writeUnsignedInt(KT.KT02, state.getCurrentRecordSequenceNumber());
+    });
+    this.crLf(segment, state.getLineStart() + lineLength);
+    state.addLine(lineLength + 2);
+  }
+
+  private void writeHeader(MemorySegment segment, State state, FixedLengthRecordDefinition definition) {
+    int lineLength = writeEmptyFixedLine(segment, state, definition, line -> {
+      line.writeString(HD.H01, "HD");
+      line.writeUnsignedInt(HD.H02, state.getCurrentRecordSequenceNumber());
+      // TODO version
+    });
+    this.crLf(segment, state.getLineStart() + lineLength);
+    state.addLine(lineLength + 2);
+  }
+  
+  private void writeTrailer(MemorySegment segment, State state, FixedLengthRecordDefinition definition) {
+    int lineLength = writeEmptyFixedLine(segment, state, definition, line -> {
+      line.writeString(TR.T01, "TR");
+      line.writeUnsignedInt(TR.T02, state.getCurrentRecordSequenceNumber());
+    });
+    this.crLf(segment, state.getLineStart() + lineLength);
+    state.addLine(lineLength + 2);
   }
 
   private void crLf(MemorySegment segment, long position) {
@@ -81,15 +144,9 @@ public final class EmptyFileGenerator {
     segment.set(ValueLayout.JAVA_BYTE, position + 1, LF);
   }
 
-  private long writeEmptyFixedLine(MemorySegment fileSegment, long lineStart, SegmentedRecordDefinition segmentedRecordDefinition) {
+  private int writeEmptySegmentedLine(MemorySegment fileSegment, State state, SegmentedRecordDefinition segmentedRecordDefinition, Set<StringFieldDefinition> segmentIndicatorFields, Consumer<WritingLine> lineConsumer) {
     int recordLength = segmentedRecordDefinition.getBaseLength();
-    List<SegmentDefinition> segmentDefinitions = segmentedRecordDefinition.getSegmentDefinitions();
-    Set<StringFieldDefinition> segmentIndicatorFields = HashSet.newHashSet(segmentDefinitions.size());
-    for (SegmentDefinition segmentDefinition : segmentDefinitions) {
-      // TODO optimize
-      segmentIndicatorFields.add(segmentDefinition.getSegmentIndicatorField());
-    }
-    MemorySegment recordSegment = fileSegment.asSlice(lineStart, recordLength);
+    MemorySegment recordSegment = fileSegment.asSlice(state.getLineStart(), recordLength);
     WritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
     List<? extends OffsetFieldDefinition> fields = segmentedRecordDefinition.getFixedFields();
     writeTypeField(segmentedRecordDefinition, fields.getFirst(), line);
@@ -106,12 +163,14 @@ public final class EmptyFileGenerator {
         case SignedFieldDefinition _ -> throw new UnsupportedOperationException("Unsigned not yet supported");
       };
     }
+    lineConsumer.accept(line);
     return recordLength;
   }
 
-  private long writeEmptyFixedLine(MemorySegment fileSegment, long lineStart, FixedLengthRecordDefinition fixedRecordDefinition) {
+  private int writeEmptyFixedLine(MemorySegment fileSegment, State state, FixedLengthRecordDefinition fixedRecordDefinition, Consumer<WritingLine> lineConsumer) {
     int recordLength = fixedRecordDefinition.getBaseLength();
-    MemorySegment recordSegment = fileSegment.asSlice(lineStart, recordLength);
+    MemorySegment recordSegment = fileSegment.asSlice(state.getLineStart(), recordLength);
+    
     WritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
     List<? extends OffsetFieldDefinition> fields = fixedRecordDefinition.getFields();
     writeTypeField(fixedRecordDefinition, fields.getFirst(), line);
@@ -122,9 +181,11 @@ public final class EmptyFileGenerator {
         case SignedFieldDefinition _ -> throw new UnsupportedOperationException("Unsigned not yet supported");
       };
     }
+    lineConsumer.accept(line);
+    
     return recordLength;
   }
-  
+
   private void writeTypeField(RecordDefinition recordDefinition, OffsetFieldDefinition fieldDefintion, WritingLine line) {
     String recordType = recordDefinition.getType();
     int expectedLength = recordType.length();

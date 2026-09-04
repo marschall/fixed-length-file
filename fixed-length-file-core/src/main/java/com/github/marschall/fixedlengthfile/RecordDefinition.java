@@ -27,7 +27,7 @@ public abstract sealed class RecordDefinition {
 
   public abstract int getMaximumLength();
 
-  String getType() {
+  public String getType() {
     return this.type;
   }
 

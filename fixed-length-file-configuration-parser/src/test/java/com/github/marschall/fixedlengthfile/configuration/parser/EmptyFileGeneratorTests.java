@@ -9,10 +9,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import com.github.marschall.fixedlengthfile.EmptyFileGenerator;
 import com.github.marschall.fixedlengthfile.FileDefinition;
 import com.github.marschall.fixedlengthfile.FixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile;
@@ -31,11 +29,11 @@ class EmptyFileGeneratorTests {
     this.generator = new EmptyFileGenerator(definition);
   }
 
-  @Disabled
+//  @Disabled
   @Test
   void generateFile() throws IOException {
     Path output = this.path;
-    this.generator.generateFile(output, 1000);
+    this.generator.generateFile(output, 500_000);
   }
 
   @Test 

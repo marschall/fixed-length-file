@@ -7,11 +7,11 @@ import java.lang.foreign.MemorySegment;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
-final class Latin1MemorySegmentWritingLine implements WritingLine {
+public final class Latin1MemorySegmentWritingLine implements WritingLine {
 
   private final MemorySegment segment;
 
-  Latin1MemorySegmentWritingLine(MemorySegment segment) {
+  public Latin1MemorySegmentWritingLine(MemorySegment segment) {
     this.segment = segment;
   }
 
