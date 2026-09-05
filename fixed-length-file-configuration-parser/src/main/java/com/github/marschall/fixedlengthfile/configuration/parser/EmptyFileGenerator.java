@@ -89,7 +89,7 @@ public final class EmptyFileGenerator {
 
     var state = new State();
     RecordDefinition header = recordDefinitions.getFirst();
-    writeHeader(segment, state, (FixedLengthRecordDefinition) header);
+    writeHeader(segment, state, this.fileDefinition, (FixedLengthRecordDefinition) header);
 
     RecordDefinition record = recordDefinitions.get(1);
     writeRecords(segment, state, (SegmentedRecordDefinition) record, lineCount);
@@ -97,9 +97,8 @@ public final class EmptyFileGenerator {
     RecordDefinition trailer = recordDefinitions.getLast();
     writeTrailer(segment, state, (FixedLengthRecordDefinition) trailer);
   }
-  
-  private void writeRecords(MemorySegment segment, State state, SegmentedRecordDefinition definition, int count) {
 
+  private void writeRecords(MemorySegment segment, State state, SegmentedRecordDefinition definition, int count) {
     List<SegmentDefinition> segmentDefinitions = definition.getSegmentDefinitions();
     Set<StringFieldDefinition> segmentIndicatorFields = HashSet.newHashSet(segmentDefinitions.size());
     for (SegmentDefinition segmentDefinition : segmentDefinitions) {
@@ -108,7 +107,6 @@ public final class EmptyFileGenerator {
     for (int i = 0; i < count; i++) {
       this.writeRecord(segment, state, definition, segmentIndicatorFields);
     }
-    
   }
 
   private void writeRecord(MemorySegment segment, State state, SegmentedRecordDefinition definition, Set<StringFieldDefinition> segmentIndicatorFields) {
@@ -120,18 +118,18 @@ public final class EmptyFileGenerator {
     state.addLine(lineLength + 2);
   }
 
-  private void writeHeader(MemorySegment segment, State state, FixedLengthRecordDefinition definition) {
-    int lineLength = writeEmptyFixedLine(segment, state, definition, line -> {
+  private void writeHeader(MemorySegment segment, State state, FileDefinition fieldDefintion, FixedLengthRecordDefinition recordDefinition) {
+    int lineLength = writeEmptyFixedLine(segment, state, recordDefinition, line -> {
       line.writeString(HD.H01, "HD");
       line.writeUnsignedInt(HD.H02, state.getCurrentRecordSequenceNumber());
-      // TODO version
+      line.writeString(HD.H12, toInterfaceVersion(fieldDefintion.getVersion()));
     });
     this.crLf(segment, state.getLineStart() + lineLength);
     state.addLine(lineLength + 2);
   }
-  
-  private void writeTrailer(MemorySegment segment, State state, FixedLengthRecordDefinition definition) {
-    int lineLength = writeEmptyFixedLine(segment, state, definition, line -> {
+
+  private void writeTrailer(MemorySegment segment, State state, FixedLengthRecordDefinition recordDefinition) {
+    int lineLength = writeEmptyFixedLine(segment, state, recordDefinition, line -> {
       line.writeString(TR.T01, "TR");
       line.writeUnsignedInt(TR.T02, state.getCurrentRecordSequenceNumber());
     });
@@ -184,6 +182,10 @@ public final class EmptyFileGenerator {
     lineConsumer.accept(line);
     
     return recordLength;
+  }
+
+  static String toInterfaceVersion(FileDefinition.Version version) {
+    return "%1$d%2$02d".formatted(version.getMajor(), version.getMinor());
   }
 
   private void writeTypeField(RecordDefinition recordDefinition, OffsetFieldDefinition fieldDefintion, WritingLine line) {
