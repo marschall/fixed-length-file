@@ -13,6 +13,7 @@ sealed interface SegmentOffsets {
   // TODO boolean counts towards record length
 
   static final class NoSegment implements SegmentOffsets {
+    // equals and hashCode from Object
 
     static final SegmentOffsets INSTANCE = new NoSegment();
 
@@ -23,6 +24,11 @@ sealed interface SegmentOffsets {
     @Override
     public int getSegmentOffset(int segmentIndex) {
       throw new UnsupportedOperationException("not segmented record");
+    }
+    
+    @Override
+    public String toString() {
+      return "NoSegments";
     }
 
   }
@@ -58,6 +64,22 @@ sealed interface SegmentOffsets {
     @Override
     public String toString() {
       return Arrays.toString(this.segmentOffsets);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(this.segmentOffsets);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (!(obj instanceof ArrayBasedSegmentOffsets other)) {
+        return false;
+      }
+      return Arrays.equals(this.segmentOffsets, other.segmentOffsets);
     }
   }
 

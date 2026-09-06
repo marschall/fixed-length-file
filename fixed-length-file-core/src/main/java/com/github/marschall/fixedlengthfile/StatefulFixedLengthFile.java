@@ -3,7 +3,6 @@ package com.github.marschall.fixedlengthfile;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -23,16 +22,16 @@ public final class StatefulFixedLengthFile extends FixedLengthFile implements Cl
       return List.of();
     }
     long localPosition = 0L;
-    List<LineLocator> locators = new ArrayList<>();
+    LineLocatorListBuilder locatorListBuilder = new LineLocatorListBuilder();
     while (localPosition < this.segment.byteSize()) {
       LineInformation lineInformation = this.preParseLine(localPosition);
       int recordLength = lineInformation.recordLength();
       if (lineInformation.recordDefinition().getType().equals(recordType)) {
-        locators.add(new LineLocator(localPosition, lineInformation));
+        locatorListBuilder.add(localPosition, lineInformation);
       }
       localPosition = this.advanceBeyondNewline(localPosition + recordLength);
     }
-    return locators;
+    return locatorListBuilder.build();
   }
 
   public ReadingLine readLine(LineLocator locator) {
