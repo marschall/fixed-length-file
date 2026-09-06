@@ -13,22 +13,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import com.github.marschall.fixedlengthfile.AbstractFixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.FileDefinition;
 import com.github.marschall.fixedlengthfile.FileDefinitionRepository;
-import com.github.marschall.fixedlengthfile.FixedLengthFileParser;
+import com.github.marschall.fixedlengthfile.RepositoryFixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile.LineLocator;
 
 class EmptyFileGeneratorTests {
 
   private EmptyFileGenerator generator;
-  private FixedLengthFileParser parser;
+  private AbstractFixedLengthFileParser parser;
   private Path path;
 
   @BeforeEach
   void setUp() {
     FileDefinition definition = InterfaceDefinition267.definition();
-    this.parser = new FixedLengthFileParser(FileDefinitionRepository.builder()
+    this.parser = new RepositoryFixedLengthFileParser(FileDefinitionRepository.builder()
         .addMainFileDefinition(definition)
         .build());
     this.path = Paths.get("src/test/resources/reference/empty.kt");

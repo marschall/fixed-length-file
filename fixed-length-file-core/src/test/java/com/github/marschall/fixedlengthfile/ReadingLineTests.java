@@ -92,25 +92,14 @@ class ReadingLineTests {
     assertNotNull(recordDefinition);
     assertEquals(33, recordDefinition.getMaximumLength());
   }
-  
-  private FixedLengthFileParser parser1() {
-    return new FixedLengthFileParser(FileDefinitionRepository.builder()
-        .addMainFileDefinition(FILE_DEFINITION1)
-        .build());
-  }
-  
-  private FixedLengthFileParser parser2() {
-    return new FixedLengthFileParser(FileDefinitionRepository.builder()
-        .addMainFileDefinition(FILE_DEFINITION2)
-        .build());
-  }
 
   @Test
   void readLines() throws IOException {
 
     var path = Path.of("src/test/resources/sample.txt");
 
-    this.parser1().parseFile(path, file -> {
+    var parser = new FileDefinitionFixedLengthFileParser(FILE_DEFINITION1);
+    parser.parseFile(path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         if (recordNumber == 0) {
@@ -141,7 +130,8 @@ class ReadingLineTests {
   void asReader_readAllAsString() throws IOException {
     var path = Path.of("src/test/resources/sample.txt");
 
-    this.parser1().parseFile(path, file -> {
+    var parser = new FileDefinitionFixedLengthFileParser(FILE_DEFINITION1);
+    parser.parseFile(path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         if (recordNumber == 0) {
@@ -174,7 +164,8 @@ class ReadingLineTests {
   void asReader_read() throws IOException {
     var path = Path.of("src/test/resources/sample.txt");
     
-    this.parser1().parseFile(path, file -> {
+    var parser = new FileDefinitionFixedLengthFileParser(FILE_DEFINITION1);
+    parser.parseFile(path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         if (recordNumber == 0) {
@@ -247,8 +238,8 @@ class ReadingLineTests {
 
     var path = Path.of("src/test/resources/sample_high_level_types");
 
-
-    this.parser2().parseFile(path, file -> {
+    var parser = new FileDefinitionFixedLengthFileParser(FILE_DEFINITION2);
+    parser.parseFile(path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals("R", recordType, "record type");
         assertEquals(0, recordNumber, "record number");
@@ -270,7 +261,8 @@ class ReadingLineTests {
   void objectLayout() throws IOException {
     var path = Path.of("src/test/resources/sample.txt");
 
-    this.parser1().parseFile(path, file -> {
+    var parser = new FileDefinitionFixedLengthFileParser(FILE_DEFINITION1);
+    parser.parseFile(path, file -> {
       file.parseLines((_, _, line) -> {
         ClassLayout layout = ClassLayout.parseInstance(line);
         System.out.println(layout.toPrintable());

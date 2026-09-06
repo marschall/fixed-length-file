@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableColumn;
 
+import com.github.marschall.fixedlengthfile.AbstractFixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.SignedFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
@@ -37,7 +38,7 @@ import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlengthfile.FieldDefinition.SegmentFieldDefinition;
 import com.github.marschall.fixedlengthfile.FileDefinition;
 import com.github.marschall.fixedlengthfile.FileDefinitionRepository;
-import com.github.marschall.fixedlengthfile.FixedLengthFileParser;
+import com.github.marschall.fixedlengthfile.RepositoryFixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.RecordDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
@@ -50,13 +51,13 @@ import com.github.marschall.fixedlengthfile.ui.ColumnModel.ValueAccessor;
 
 public class FixedLengthUiApplication {
 
-  private final FixedLengthFileParser parser;
+  private final AbstractFixedLengthFileParser parser;
   private final List<Path> openFiles;
   private JTabbedPane tabbedPane;
   private final ExecutorService backgroundLoader;
 
   FixedLengthUiApplication(FileDefinitionRepository repository) {
-    this.parser = new FixedLengthFileParser(repository);
+    this.parser = new RepositoryFixedLengthFileParser(repository);
     this.openFiles = Collections.synchronizedList(new ArrayList<>());
     this.backgroundLoader = Executors.newSingleThreadExecutor(runnable -> {
       var thread = new Thread(runnable, "background-loader");

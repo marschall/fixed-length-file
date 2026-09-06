@@ -43,21 +43,6 @@ public final class FileDefinitionRepository {
     return new FileDefinitionRepositoryBuilder();
   }
 
-  public int getFileDefinitionCount() {
-    return this.mainFileDefinitions.size() + this.variantFileDefinitions.size();
-  }
-
-  public FileDefinition getSoleFileDefinition() {
-    int fileDefinitionCount = this.getFileDefinitionCount();
-    if (fileDefinitionCount != 1) {
-      throw new IllegalStateException("expected exactly 1 file definition but got: " + fileDefinitionCount);
-    }
-    if (!this.mainFileDefinitions.isEmpty()) {
-      return this.mainFileDefinitions.values().iterator().next();
-    }
-    return this.variantFileDefinitions.values().iterator().next();
-  }
-
   public static final class FileDefinitionRepositoryBuilder {
 
     private final List<FileDefinition> mainFileDefinitions;

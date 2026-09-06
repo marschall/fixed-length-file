@@ -139,9 +139,7 @@ class FixedLengthFileParserTests {
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
     List<Integer> expectedLengths = List.of(2, 13, 10, 13, 2);
     
-    FixedLengthFileParser parser = new FixedLengthFileParser(FileDefinitionRepository.builder()
-        .addMainFileDefinition(fileDefinition)
-        .build());
+    var parser = new FileDefinitionFixedLengthFileParser(fileDefinition);
     
     parser.parseFile(path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
@@ -195,14 +193,14 @@ class FixedLengthFileParserTests {
 
   @Test
   void toMainVersion() {
-    assertEquals(FileDefinition.Version.of(2, 67), FixedLengthFileParser.toMainVersion("267"));
-    assertEquals(FileDefinition.Version.of(2, 7), FixedLengthFileParser.toMainVersion("207"));
+    assertEquals(FileDefinition.Version.of(2, 67), RepositoryFixedLengthFileParser.toMainVersion("267"));
+    assertEquals(FileDefinition.Version.of(2, 7), RepositoryFixedLengthFileParser.toMainVersion("207"));
   }
 
   @Test
   void toVarianVersion() {
-    assertEquals(FileDefinition.Version.of(3, 0), FixedLengthFileParser.toVarianVersion("3.0"));
-    assertEquals(FileDefinition.Version.of(3, 1), FixedLengthFileParser.toVarianVersion("3.1"));
+    assertEquals(FileDefinition.Version.of(3, 0), RepositoryFixedLengthFileParser.toVarianVersion("3.0"));
+    assertEquals(FileDefinition.Version.of(3, 1), RepositoryFixedLengthFileParser.toVarianVersion("3.1"));
   }
 
 }

@@ -12,8 +12,9 @@ import org.springframework.batch.infrastructure.item.file.ResourceAwareItemReade
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
+import com.github.marschall.fixedlengthfile.AbstractFixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.FileDefinitionRepository;
-import com.github.marschall.fixedlengthfile.FixedLengthFileParser;
+import com.github.marschall.fixedlengthfile.RepositoryFixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.ReadingLine;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile;
 
@@ -29,10 +30,10 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
   private Arena arena;
 
   private StatefulFixedLengthFile file;
-  private final FixedLengthFileParser parser;
+  private final AbstractFixedLengthFileParser parser;
   
   public FixedLengthItemReader(FileDefinitionRepository fileDefinitionRepository) {
-    this.parser = new FixedLengthFileParser(fileDefinitionRepository);
+    this.parser = new RepositoryFixedLengthFileParser(fileDefinitionRepository);
   }
 
   @Override

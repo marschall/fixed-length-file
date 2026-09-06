@@ -34,7 +34,7 @@ public final class StatefulFixedLengthFile extends FixedLengthFile implements Cl
     }
     return locators;
   }
-  
+
   public ReadingLine readLine(LineLocator locator) {
     LineInformation lineInformation = locator.lineInformation;
     long lineStart = locator.lineStart;
