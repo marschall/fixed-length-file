@@ -4,6 +4,8 @@ import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
 public interface WritingLine {
+  
+  // TODO LocalDate, LocalTime, LocalDateTime, BigDecimal
 
   void writeUnsignedInt(UnsignedFieldDefinition field, int value);
 

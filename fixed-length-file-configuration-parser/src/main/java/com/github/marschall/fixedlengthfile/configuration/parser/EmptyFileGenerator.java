@@ -30,8 +30,8 @@ import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
 import com.github.marschall.fixedlengthfile.SegmentIndicator;
 import com.github.marschall.fixedlengthfile.WritingLine;
-import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.KT;
 import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.HD;
+import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.KT;
 import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267.TR;
 
 public final class EmptyFileGenerator {

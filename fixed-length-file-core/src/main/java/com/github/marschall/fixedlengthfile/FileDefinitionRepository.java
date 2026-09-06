@@ -8,9 +8,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import com.github.marschall.fixedlengthfile.FileInformation.Unknown;
 import com.github.marschall.fixedlengthfile.FileInformation.Versioned.Main;
 import com.github.marschall.fixedlengthfile.FileInformation.Versioned.Variant;
-import com.github.marschall.fixedlengthfile.FileInformation.Unknown;
 
 public final class FileDefinitionRepository {
 
@@ -43,6 +43,21 @@ public final class FileDefinitionRepository {
     return new FileDefinitionRepositoryBuilder();
   }
 
+  public int getFileDefinitionCount() {
+    return this.mainFileDefinitions.size() + this.variantFileDefinitions.size();
+  }
+
+  public FileDefinition getSoleFileDefinition() {
+    int fileDefinitionCount = this.getFileDefinitionCount();
+    if (fileDefinitionCount != 1) {
+      throw new IllegalStateException("expected exactly 1 file definition but got: " + fileDefinitionCount);
+    }
+    if (!this.mainFileDefinitions.isEmpty()) {
+      return this.mainFileDefinitions.values().iterator().next();
+    }
+    return this.variantFileDefinitions.values().iterator().next();
+  }
+
   public static final class FileDefinitionRepositoryBuilder {
 
     private final List<FileDefinition> mainFileDefinitions;
@@ -53,12 +68,14 @@ public final class FileDefinitionRepository {
       this.variantFileDefinitions = new ArrayList<>();
     }
 
-    public void addMainFileDefinition(FileDefinition fileDefinition) {
+    public FileDefinitionRepositoryBuilder addMainFileDefinition(FileDefinition fileDefinition) {
       this.mainFileDefinitions.add(Objects.requireNonNull(fileDefinition));
+      return this;
     }
 
-    public void addVariantFileDefinition(FileDefinition fileDefinition) {
+    public FileDefinitionRepositoryBuilder addVariantFileDefinition(FileDefinition fileDefinition) {
       this.variantFileDefinitions.add(Objects.requireNonNull(fileDefinition));
+      return this;
     }
 
     public FileDefinitionRepository build() {

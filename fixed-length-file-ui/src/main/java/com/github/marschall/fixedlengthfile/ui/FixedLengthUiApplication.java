@@ -36,26 +36,27 @@ import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.SegmentFieldDefinition;
 import com.github.marschall.fixedlengthfile.FileDefinition;
+import com.github.marschall.fixedlengthfile.FileDefinitionRepository;
 import com.github.marschall.fixedlengthfile.FixedLengthFileParser;
+import com.github.marschall.fixedlengthfile.RecordDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
 import com.github.marschall.fixedlengthfile.SegmentIndicator;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile.LineLocator;
 import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition267;
+import com.github.marschall.fixedlengthfile.configuration.parser.InterfaceDefinition300;
 import com.github.marschall.fixedlengthfile.ui.ColumnModel.ValueAccessor;
 
 public class FixedLengthUiApplication {
 
-  private final FileDefinition definition;
-  private final List<ColumnModel> columnModels;
+  private final FixedLengthFileParser parser;
   private final List<Path> openFiles;
   private JTabbedPane tabbedPane;
   private final ExecutorService backgroundLoader;
 
-  FixedLengthUiApplication(FileDefinition definition) {
-    this.definition = definition;
-    this.columnModels = buildColumnModelList(definition, "KT");
+  FixedLengthUiApplication(FileDefinitionRepository repository) {
+    this.parser = new FixedLengthFileParser(repository);
     this.openFiles = Collections.synchronizedList(new ArrayList<>());
     this.backgroundLoader = Executors.newSingleThreadExecutor(runnable -> {
       var thread = new Thread(runnable, "background-loader");
@@ -83,7 +84,7 @@ public class FixedLengthUiApplication {
     table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
     table.setModel(dataModel);
 
-    setColumnWidths(table);
+    setColumnWidths(table, dataModel);
 
     var scrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     panel.add(scrollPane);
@@ -91,10 +92,11 @@ public class FixedLengthUiApplication {
     return panel;
   }
 
-  private void setColumnWidths(JTable table) {
+  private void setColumnWidths(JTable table, FixedLengthTableModel dataModel) {
+    List<ColumnModel> columnModels = dataModel.getColumnModelList();
     var tableFontMetrics = table.getFontMetrics(table.getFont());
-    for (int i = 0; i < this.columnModels.size(); i++) {
-      ColumnModel columnModel = this.columnModels.get(i);
+    for (int i = 0; i < columnModels.size(); i++) {
+      ColumnModel columnModel = columnModels.get(i);
       TableColumn column = table.getColumnModel().getColumn(i);
       String reference  = "X".repeat(columnModel.getColumnWidth());
       int stringWidth = tableFontMetrics.stringWidth(reference);
@@ -128,9 +130,12 @@ public class FixedLengthUiApplication {
     this.backgroundLoader.submit(() -> {
       Arena arena = Arena.ofAuto();
       try {
-        StatefulFixedLengthFile file = FixedLengthFileParser.parseFile(this.definition, path, arena);
-        List<LineLocator> locators = file.preparseFile("KT");
-        FixedLengthTableModel tableModel = new FixedLengthTableModel(this.columnModels);
+        StatefulFixedLengthFile file = FixedLengthUiApplication.this.parser.parseFile(path, arena);
+        FileDefinition fileDefinition = file.getFileDefinition();
+        RecordDefinition mainRecordType = fileDefinition.getRecordDefinitions().get(1);
+        List<LineLocator> locators = file.preparseFile(mainRecordType.getType());
+        List<ColumnModel> columnModels = buildColumnModelList(fileDefinition, mainRecordType.getType());
+        FixedLengthTableModel tableModel = new FixedLengthTableModel(columnModels);
         tableModel.loadFile(file, locators);
         SwingUtilities.invokeLater(() -> addTab(path, tableModel));
       } catch (IOException e) {
@@ -291,9 +296,12 @@ public class FixedLengthUiApplication {
   }
 
   public static void main(String[] args) {
-    FileDefinition definition = InterfaceDefinition267.definition();
+    FileDefinitionRepository repository = FileDefinitionRepository.builder()
+        .addMainFileDefinition(InterfaceDefinition267.definition())
+        .addVariantFileDefinition(InterfaceDefinition300.definition())
+        .build();
     SwingUtilities.invokeLater(() -> {
-      var application = new FixedLengthUiApplication(definition);
+      var application = new FixedLengthUiApplication(repository);
       application.createAndShowGUI();
       for (String arg : args) {
         Path toOpen = Paths.get(arg);

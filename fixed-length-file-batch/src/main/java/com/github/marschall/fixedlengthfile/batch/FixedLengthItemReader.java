@@ -12,7 +12,7 @@ import org.springframework.batch.infrastructure.item.file.ResourceAwareItemReade
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
-import com.github.marschall.fixedlengthfile.FileDefinition;
+import com.github.marschall.fixedlengthfile.FileDefinitionRepository;
 import com.github.marschall.fixedlengthfile.FixedLengthFileParser;
 import com.github.marschall.fixedlengthfile.ReadingLine;
 import com.github.marschall.fixedlengthfile.StatefulFixedLengthFile;
@@ -29,6 +29,11 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
   private Arena arena;
 
   private StatefulFixedLengthFile file;
+  private final FixedLengthFileParser parser;
+  
+  public FixedLengthItemReader(FileDefinitionRepository fileDefinitionRepository) {
+    this.parser = new FixedLengthFileParser(fileDefinitionRepository);
+  }
 
   @Override
   public @Nullable ReadingLine read() throws Exception {
@@ -48,10 +53,8 @@ public class FixedLengthItemReader extends ItemStreamSupport implements Resource
   public void open(ExecutionContext executionContext) throws ItemStreamException {
     Path path = this.getPath();
     this.arena = Arena.ofShared();
-    // FIXME
-    FileDefinition fileDefinition = null;
     try {
-      this.file = FixedLengthFileParser.parseFile(fileDefinition, path, this.arena);
+      this.file = this.parser.parseFile(path, this.arena);
     } catch (IOException e) {
       throw new ItemStreamException("could not open file: " + path, e);
     }

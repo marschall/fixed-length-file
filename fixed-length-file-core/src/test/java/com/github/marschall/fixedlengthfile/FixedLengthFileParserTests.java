@@ -138,7 +138,12 @@ class FixedLengthFileParserTests {
     AtomicInteger expectedRecordNumber = new AtomicInteger(0);
     List<String> expectedRecordTypes = List.of("H", "R", "R", "R", "F");
     List<Integer> expectedLengths = List.of(2, 13, 10, 13, 2);
-    FixedLengthFileParser.parseFile(fileDefinition, path, file -> {
+    
+    FixedLengthFileParser parser = new FixedLengthFileParser(FileDefinitionRepository.builder()
+        .addMainFileDefinition(fileDefinition)
+        .build());
+    
+    parser.parseFile(path, file -> {
       file.parseLines((recordType, recordNumber, line) -> {
         assertEquals(expectedRecordNumber.getAndIncrement(), recordNumber, "record number");
         assertEquals(expectedRecordTypes.get(recordNumber), recordType, "record type");
@@ -186,6 +191,18 @@ class FixedLengthFileParserTests {
       });
     });
     assertEquals(5, expectedRecordNumber.get(), "encounterd records");
+  }
+
+  @Test
+  void toMainVersion() {
+    assertEquals(FileDefinition.Version.of(2, 67), FixedLengthFileParser.toMainVersion("267"));
+    assertEquals(FileDefinition.Version.of(2, 7), FixedLengthFileParser.toMainVersion("207"));
+  }
+
+  @Test
+  void toVarianVersion() {
+    assertEquals(FileDefinition.Version.of(3, 0), FixedLengthFileParser.toVarianVersion("3.0"));
+    assertEquals(FileDefinition.Version.of(3, 1), FixedLengthFileParser.toVarianVersion("3.1"));
   }
 
 }

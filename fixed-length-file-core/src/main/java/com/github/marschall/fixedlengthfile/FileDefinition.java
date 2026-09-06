@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class FileDefinition {
+  
+  // TODO ability to register a parser for FileDefinition
 
   private final List<RecordDefinition> recordDefinitions;
   private final Map<String, RecordDefinition> recordDefinitionMap;

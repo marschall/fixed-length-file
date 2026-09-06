@@ -36,6 +36,10 @@ final class FixedLengthTableModel extends AbstractTableModel {
     this.lines = lines;
     this.fireTableDataChanged();
   }
+  
+  public List<ColumnModel> getColumnModelList() {
+    return this.columnModelList;
+  }
 
   @Override
   public int getRowCount() {

@@ -29,6 +29,10 @@ public abstract sealed class FixedLengthFile
     this.segment = segment;
   }
 
+  public FileDefinition getFileDefinition() {
+    return this.fileDefinition;
+  }
+
   protected LineInformation preParseLine(long lineStart) {
     RecordDefinition recordDefinition = determineRecordDefinition(lineStart);
     return switch (recordDefinition) {
