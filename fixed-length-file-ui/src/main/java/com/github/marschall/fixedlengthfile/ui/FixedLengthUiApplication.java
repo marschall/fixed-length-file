@@ -271,6 +271,7 @@ public class FixedLengthUiApplication {
     fileChooser.setMultiSelectionEnabled(true);
     fileChooser.setAcceptAllFileFilterUsed(true);
     fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("KT File", "kt"));
+    fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("KTB File", "ktb"));
 
     int result = fileChooser.showOpenDialog(parent);
     if (result == JFileChooser.APPROVE_OPTION) {
