@@ -43,6 +43,12 @@ class InterfaceDefinition300Tests {
         .map(FieldDefinition::getName)
         .toList();
     assertEquals(List.of("D50", "D51", "D52", "D53"), segmentIndicatorFields);
+    assertEquals(1807, d1.getBaseLength()
+        // YYNN
+        + segmentDefinitions.getFirst().getLength() + segmentDefinitions.get(1).getLength());
+    assertEquals(2096, d1.getBaseLength()
+        // YYYN
+        + segmentDefinitions.getFirst().getLength() + segmentDefinitions.get(1).getLength() + segmentDefinitions.get(1).getLength());
   }
 
   @Test

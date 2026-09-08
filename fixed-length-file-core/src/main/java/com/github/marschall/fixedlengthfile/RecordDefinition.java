@@ -147,7 +147,7 @@ public abstract sealed class RecordDefinition {
       this.length = computeLength(fields);
     }
 
-    int getLength() {
+    public int getLength() {
       return this.length;
     }
 

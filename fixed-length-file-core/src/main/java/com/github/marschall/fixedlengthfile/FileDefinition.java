@@ -120,6 +120,11 @@ public final class FileDefinition {
       return ((31 + this.major) * 31) + this.minor;
     }
 
+    @Override
+    public String toString() {
+      return Integer.toString(this.major) + '.' + this.minor;
+    }
+
   }
 
 }

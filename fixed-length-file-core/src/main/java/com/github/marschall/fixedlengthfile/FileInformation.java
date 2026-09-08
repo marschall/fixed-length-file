@@ -27,6 +27,12 @@ public abstract sealed class FileInformation {
       Main(Version version) {
         super(version);
       }
+
+      @Override
+      public String toString() {
+        return "Main(" + this.getVersion() + ")";
+      }
+
     }
 
     public static final class Variant extends Versioned {
@@ -34,6 +40,12 @@ public abstract sealed class FileInformation {
       Variant(Version version) {
         super(version);
       }
+
+      @Override
+      public String toString() {
+        return "Variant(" + this.getVersion() + ")";
+      }
+
     }
 
   }
@@ -44,6 +56,11 @@ public abstract sealed class FileInformation {
 
     private Unknown() {
       super();
+    }
+    
+    @Override
+    public String toString() {
+      return "Unknwon";
     }
 
   }
