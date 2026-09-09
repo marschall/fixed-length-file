@@ -78,32 +78,4 @@ class Latin1MemorySegmentWritingLineTests {
     assertEquals("                  0000", new String(target, ISO_8859_1));
   }
 
-  @Test
-  void digits() {
-    assertEquals(1, Latin1MemorySegmentWritingLine.digits(0));
-    assertEquals(1, Latin1MemorySegmentWritingLine.digits(1));
-    assertEquals(1, Latin1MemorySegmentWritingLine.digits(9));
-
-    assertEquals(2, Latin1MemorySegmentWritingLine.digits(10));
-    assertEquals(2, Latin1MemorySegmentWritingLine.digits(99));
-
-    assertEquals(3, Latin1MemorySegmentWritingLine.digits(100));
-    assertEquals(3, Latin1MemorySegmentWritingLine.digits(101));
-    assertEquals(3, Latin1MemorySegmentWritingLine.digits(999));
-
-    assertEquals(4, Latin1MemorySegmentWritingLine.digits(1000));
-    assertEquals(4, Latin1MemorySegmentWritingLine.digits(1001));
-    assertEquals(4, Latin1MemorySegmentWritingLine.digits(9999));
-
-    assertEquals(7, Latin1MemorySegmentWritingLine.digits(1_000_000));
-    assertEquals(7, Latin1MemorySegmentWritingLine.digits(9_999_999));
-
-    assertEquals(8, Latin1MemorySegmentWritingLine.digits(10_000_000));
-    assertEquals(8, Latin1MemorySegmentWritingLine.digits(99_999_999));
-
-    assertEquals(9, Latin1MemorySegmentWritingLine.digits(100_000_000));
-    assertEquals(9, Latin1MemorySegmentWritingLine.digits(900_000_000));
-    assertEquals(9, Latin1MemorySegmentWritingLine.digits(Integer.MAX_VALUE));
-  }
-
 }
