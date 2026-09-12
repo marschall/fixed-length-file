@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
-import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
 
 public final class CharArrayWritingLine extends AbstractWritingLine {
@@ -19,13 +18,7 @@ public final class CharArrayWritingLine extends AbstractWritingLine {
 
   void initializeFor(FixedLengthRecordDefinition recordDefinition) {
     this.length = recordDefinition.getBaseLength();
-    // TODO cache
-    Initializer initializer = buildInitializer(recordDefinition);
-    initializer.initialize(this);
-    
-    // first field is record type
-    StringFieldDefinition recordDefinitionField = (StringFieldDefinition) recordDefinition.getFields().getFirst();
-    this.writeString(recordDefinitionField, recordDefinition.getType());
+    super.initializeFor(recordDefinition);
   }
   
   void exportTo(Writer writer) throws IOException {

@@ -1,16 +1,21 @@
 package com.github.marschall.fixedlengthfile;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.CharInitializer;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.NumInitializer;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.CompositeInitializer;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
-import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.CompositeInitializer;
-import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.CharInitializer;
-import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.NumInitializer;
 
 abstract class AbstractWritingLine implements WritingLine {
   
@@ -21,14 +26,54 @@ abstract class AbstractWritingLine implements WritingLine {
   abstract void writeCharAt(int index, char c);
 
   abstract void writePaddingString(int offset, int padding);
+
+  // utility methods
+
+  static int digits(int i) {
+    if (i < 0) {
+      throw new IllegalArgumentException("value must be positive");
+    }
+    int p = 10;
+    for (int j = 1; j < 10; j++) {
+      if (i < p) {
+        return j;
+      }
+      p = 10 * p;
+    }
+    return 10;
+  }
+
+  static int digits(long l) {
+    if (l < 0) {
+      throw new IllegalArgumentException("value must be positive");
+    }
+    long p = 10L;
+    for (int j = 1; j < 19; j++) {
+      if (l < p) {
+        return j;
+      }
+      p = 10 * p;
+    }
+    return 19;
+  }
+  
+  // intialization
+
+  void initializeFor(FixedLengthRecordDefinition recordDefinition) {
+    // TODO cache
+    Initializer initializer = buildInitializer(recordDefinition);
+    initializer.initialize(this);
+    
+    // first field is record type
+    StringFieldDefinition recordDefinitionField = (StringFieldDefinition) recordDefinition.getFields().getFirst();
+    this.writeString(recordDefinitionField, recordDefinition.getType());
+  }
   
   static Initializer buildInitializer(FixedLengthRecordDefinition recordDefinition) {
     List<? extends OffsetFieldDefinition> allFields = recordDefinition.getFields();
     // the first field is the record type, this has to be set always
     return buildInitializer(allFields.subList(1, allFields.size()));
   }
-
-  // utility methods
 
   private static Initializer buildInitializer(List<? extends OffsetFieldDefinition> fields) {
     List<Initializer> initializers = new ArrayList<>();
@@ -73,36 +118,6 @@ abstract class AbstractWritingLine implements WritingLine {
     NUM;
 
   }
-
-  static int digits(int i) {
-    if (i < 0) {
-      throw new IllegalArgumentException("value must be positive");
-    }
-    int p = 10;
-    for (int j = 1; j < 10; j++) {
-      if (i < p) {
-        return j;
-      }
-      p = 10 * p;
-    }
-    return 10;
-  }
-
-  static int digits(long l) {
-    if (l < 0) {
-      throw new IllegalArgumentException("value must be positive");
-    }
-    long p = 10L;
-    for (int j = 1; j < 19; j++) {
-      if (l < p) {
-        return j;
-      }
-      p = 10 * p;
-    }
-    return 19;
-  }
-  
-  // intialization
   
   sealed interface Initializer {
 
@@ -251,6 +266,47 @@ abstract class AbstractWritingLine implements WritingLine {
     int offset = field.getOffset();
     int length = field.getLength();
     this.writePaddingString(offset, length);
+  }
+  
+  // high level public methods
+
+  @Override
+  public void writeLocalDate(UnsignedFieldDefinition field, LocalDate value) {
+    int yyyyMMdd = value.getYear() * 10000
+        + value.getMonthValue() * 100
+        + value.getDayOfMonth();
+    writeUnsignedInt(field, yyyyMMdd);
+  }
+
+  @Override
+  public void writeLocalTime(UnsignedFieldDefinition field, LocalTime value) {
+    int hhmmss = value.getHour() * 10000
+        + value.getMinute() * 100
+        + value.getMinute();
+    if (field.getLength() == 8) {
+      writeUnsignedInt(field, hhmmss * 100 + value.getNano() / 10_000_00);
+    } else {
+      writeUnsignedInt(field, hhmmss);
+    }
+  }
+
+  @Override
+  public void writeLocalDateTime(UnsignedFieldDefinition dateField, UnsignedFieldDefinition timeField, LocalDateTime value) {
+    writeLocalDate(dateField, value.toLocalDate());
+    writeLocalTime(timeField, value.toLocalTime());
+  }
+
+  @Override
+  public void writeBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField,
+      BigDecimal value, int scale) {
+    // option value.movePointRight(value.scale());
+    BigInteger unscaledValue = value.unscaledValue();
+    if (amountField.getLength() <= 9) {
+      writeUnsignedInt(amountField, unscaledValue.intValueExact());
+    } else {
+      writeUnsignedLong(amountField, unscaledValue.longValueExact());
+    }
+    writeUnsignedInt(exponentField, scale);
   }
 
 }
