@@ -1,7 +1,16 @@
 package com.github.marschall.fixedlengthfile;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.CompositeInitializer;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.CharInitializer;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.NumInitializer;
 
 abstract class AbstractWritingLine implements WritingLine {
   
@@ -12,9 +21,58 @@ abstract class AbstractWritingLine implements WritingLine {
   abstract void writeCharAt(int index, char c);
 
   abstract void writePaddingString(int offset, int padding);
+  
+  static Initializer buildInitializer(FixedLengthRecordDefinition recordDefinition) {
+    List<? extends OffsetFieldDefinition> allFields = recordDefinition.getFields();
+    // the first field is the record type, this has to be set always
+    return buildInitializer(allFields.subList(1, allFields.size()));
+  }
 
   // utility methods
 
+  private static Initializer buildInitializer(List<? extends OffsetFieldDefinition> fields) {
+    List<Initializer> initializers = new ArrayList<>();
+    OffsetFieldDefinition firstField = fields.getFirst();
+    int currentOffset = firstField.getOffset();
+    int currentLength = firstField.getLength();
+    FieldType previousType = getType(firstField);
+    for (OffsetFieldDefinition fieldDefinition : fields.subList(1, fields.size())) {
+      FieldType currentType = getType(fieldDefinition);
+      if (currentType == previousType) {
+        currentLength += fieldDefinition.getLength();
+      } else {
+        initializers.add(instantiateInitializer(previousType, currentOffset, currentLength));
+
+        currentOffset = fieldDefinition.getOffset();
+        currentLength = fieldDefinition.getLength();
+        previousType = currentType;
+      }
+    }
+    initializers.add(instantiateInitializer(previousType, currentOffset, currentLength));
+    return new CompositeInitializer(initializers);
+  }
+  
+  private static Initializer instantiateInitializer(FieldType type, int offset, int length) {
+    return switch(type) {
+      case CHAR -> new CharInitializer(offset, length);
+      case NUM -> new NumInitializer(offset, length);
+    };
+  }
+
+  private static FieldType getType(OffsetFieldDefinition fieldDefinition) {
+    return switch (fieldDefinition) {
+      case StringFieldDefinition _ -> FieldType.CHAR;
+      case UnsignedFieldDefinition _ -> FieldType.NUM;
+      default -> throw new IllegalArgumentException("Unexpected value: " + fieldDefinition);
+    };
+  }
+
+  enum FieldType {
+
+    CHAR,
+    NUM;
+
+  }
 
   static int digits(int i) {
     if (i < 0) {
@@ -43,8 +101,88 @@ abstract class AbstractWritingLine implements WritingLine {
     }
     return 19;
   }
+  
+  // intialization
+  
+  sealed interface Initializer {
 
-  // business methods
+    void initialize(AbstractWritingLine line);
+
+    static final class CompositeInitializer implements Initializer {
+
+      private final List<Initializer> initializers;
+
+      CompositeInitializer(List<Initializer> initializers) {
+        this.initializers = Objects.requireNonNull(initializers, "initializers");
+
+      }
+
+      @Override
+      public void initialize(AbstractWritingLine line) {
+        for (Initializer initializer : this.initializers) {
+          initializer.initialize(line);
+        }
+
+      }
+
+    }
+
+    abstract sealed static class AbstractOffsetLengthInitializer implements Initializer {
+
+      private final short offset;
+
+      private final short length;
+
+      protected AbstractOffsetLengthInitializer(int offset, int length) {
+        if (offset < 0 || offset > Short.MAX_VALUE) {
+          throw new IllegalArgumentException();
+        }
+        if (length < 0 || length > Short.MAX_VALUE) {
+          throw new IllegalArgumentException();
+        }
+        this.offset = (short) offset;
+        this.length = (short) length;
+      }
+
+      protected int getOffset() {
+        return this.offset;
+      }
+
+      protected int getLength() {
+        return this.length;
+      }
+
+      static final class CharInitializer extends AbstractOffsetLengthInitializer {
+
+        CharInitializer(int offset, int length) {
+          super(offset, length);
+        }
+
+        @Override
+        public void initialize(AbstractWritingLine line) {
+          line.writePaddingString(this.getOffset(), this.getLength());
+        }
+
+      }
+
+      static final class NumInitializer extends AbstractOffsetLengthInitializer {
+
+        NumInitializer(int offset, int length) {
+          super(offset, length);
+        }
+
+        @Override
+        public void initialize(AbstractWritingLine line) {
+          line.writePaddingNumber(this.getOffset(), this.getLength());
+        }
+
+      }
+
+    }
+
+  }
+
+  // public methods
 
   @Override
   public void writeUnsignedInt(UnsignedFieldDefinition field, int value) {

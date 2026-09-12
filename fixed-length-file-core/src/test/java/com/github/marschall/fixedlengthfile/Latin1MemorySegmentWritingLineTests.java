@@ -18,7 +18,7 @@ class Latin1MemorySegmentWritingLineTests {
 
   static final class R {
 
-//    static final StringFieldDefinition TYPE;
+    //    static final StringFieldDefinition TYPE;
     static final StringFieldDefinition FIELD1;
     static final StringFieldDefinition FIELD2;
     static final StringFieldDefinition FIELD3;
@@ -26,7 +26,7 @@ class Latin1MemorySegmentWritingLineTests {
     static final UnsignedFieldDefinition FIELD7;
 
     static {
-//      TYPE = new StringFieldDefinition("TYPE", 1, 0);
+      //      TYPE = new StringFieldDefinition("TYPE", 1, 0);
       FIELD1 = new StringFieldDefinition("FIELD-1", 6, 0);
       FIELD2 = new StringFieldDefinition("FIELD-2", 6, FIELD1.getOffset() + FIELD1.getLength());
       FIELD3 = new StringFieldDefinition("FIELD-3", 6, FIELD2.getOffset() + FIELD1.getLength());
@@ -62,19 +62,19 @@ class Latin1MemorySegmentWritingLineTests {
   @Test
   void writeEmptyLine() throws IOException {
     FileDefinition fileDefinition = new FileDefinition(Version.of(1, 0), List.of(R.definition()));
-    
+
     var recordDefinition = fileDefinition.getRecordDefinition("R");
-    
+
     byte[] target = new byte[recordDefinition.getMaximumLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
     var line = new Latin1MemorySegmentWritingLine(segment);
-    
+
     line.writeNoValue(R.FIELD1);
     line.writeNoValue(R.FIELD2);
     line.writeNoValue(R.FIELD3);
     line.writeNoValue(R.FIELD6);
     line.writeNoValue(R.FIELD7);
-    
+
     assertEquals("                  0000", new String(target, ISO_8859_1));
   }
 
