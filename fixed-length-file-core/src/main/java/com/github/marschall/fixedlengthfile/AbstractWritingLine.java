@@ -1,7 +1,6 @@
 package com.github.marschall.fixedlengthfile;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -300,13 +299,11 @@ abstract class AbstractWritingLine implements WritingLine {
   @Override
   public void writeBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField,
       BigDecimal value, int scale) {
-    // FIXME adjust for different scale
-    // option value.movePointRight(value.scale());
-    BigInteger unscaledValue = value.unscaledValue();
+    BigDecimal fieldValue = value.movePointRight(scale);
     if (amountField.getLength() <= 9) {
-      writeUnsignedInt(amountField, unscaledValue.intValueExact());
+      writeUnsignedInt(amountField, fieldValue.intValueExact());
     } else {
-      writeUnsignedLong(amountField, unscaledValue.longValueExact());
+      writeUnsignedLong(amountField, fieldValue.longValueExact());
     }
     writeUnsignedInt(exponentField, scale);
   }

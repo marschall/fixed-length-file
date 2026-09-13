@@ -74,6 +74,24 @@ class CharArrayWritingLineTests {
 
   }
 
+  static final class H2 {
+
+    static final StringFieldDefinition TYPE;
+    static final UnsignedFieldDefinition BIG_INTEGER_FIELD;
+    static final UnsignedFieldDefinition BIG_INTEGER_FIELD_EXPONENT;
+
+    static {
+      TYPE = new StringFieldDefinition("TYPE", 1, 0);
+      BIG_INTEGER_FIELD = new UnsignedFieldDefinition("FIELD-6", 6, TYPE.getOffset() + TYPE.getLength());
+      BIG_INTEGER_FIELD_EXPONENT = new UnsignedFieldDefinition("FIELD-7", 1, BIG_INTEGER_FIELD.getOffset() + BIG_INTEGER_FIELD.getLength());
+    }
+
+    static RecordDefinition definition() {
+      return new FixedLengthRecordDefinition("H", List.of(TYPE, BIG_INTEGER_FIELD, BIG_INTEGER_FIELD_EXPONENT));
+    }
+
+  }
+
   private static String writeLine(RecordDefinition recordDefinition, Consumer<WritingLine> lineConsumer) throws IOException {
     FixedLengthRecordDefinition definition = (FixedLengthRecordDefinition) recordDefinition;
     int maximumLength = definition.getMaximumLength();
@@ -129,6 +147,14 @@ class CharArrayWritingLineTests {
       line.writeBigDecimal(H.BIG_INTEGER_FIELD, H.BIG_INTEGER_FIELD_EXPONENT, BigDecimal.valueOf(12345L, 2), 2);
     });
     assertEquals("H200104051015152008011516535320150414122829230123452", content);
+  }
+
+  @Test
+  void writeBigDecimal() throws IOException {
+    String content = writeLine(H2.definition(), line -> {
+      line.writeBigDecimal(H2.BIG_INTEGER_FIELD, H2.BIG_INTEGER_FIELD_EXPONENT, BigDecimal.valueOf(1234L), 2);
+    });
+    assertEquals("H1234002", content);
   }
 
 }
