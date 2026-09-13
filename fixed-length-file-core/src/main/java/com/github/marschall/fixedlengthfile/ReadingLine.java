@@ -23,7 +23,7 @@ public interface ReadingLine {
   LocalTime readLocalTime(UnsignedFieldDefinition field);
 
   LocalDateTime readLocalDateTime(UnsignedFieldDefinition dateField, UnsignedFieldDefinition timeField);
-  
+
   BigDecimal readBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField);
   
   // segmented access
@@ -34,11 +34,19 @@ public interface ReadingLine {
 
   String readTrimmedString(SegmentFieldDefinition<StringFieldDefinition> field);
 
+  LocalDate readLocalDate(SegmentFieldDefinition<UnsignedFieldDefinition> field);
+
+  LocalTime readLocalTime(SegmentFieldDefinition<UnsignedFieldDefinition> field);
+
+  LocalDateTime readLocalDateTime(SegmentFieldDefinition<UnsignedFieldDefinition> dateField, SegmentFieldDefinition<UnsignedFieldDefinition> timeField);
+
+  BigDecimal readBigDecimal(SegmentFieldDefinition<UnsignedFieldDefinition> amountField, SegmentFieldDefinition<UnsignedFieldDefinition> exponentField);
+
   SegmentIndicator readSegmentIndicator(StringFieldDefinition field);
 
   // in char
   int getLength();
-  
+
   // see java.sql.PreparedStatement#setCharacterStream(int, Reader, int)
   Reader asReader();
 

@@ -122,8 +122,10 @@ class CharArrayWritingLineTests {
     String content = writeLine(H.definition(), line -> {
       line.writeLocalDate(H.DATE_FIELD1, LocalDate.of(2001, 4, 5));
       line.writeLocalTime(H.TIME_FIELD1, LocalTime.of(10, 15, 23));
-      line.writeLocalDateTime(H.DATE_FIELD2, H.TIME_FIELD2, LocalDateTime.of(LocalDate.of(2008, 1, 15), LocalTime.of(16, 53, 8)));
-      line.writeLocalDateTime(H.DATE_FIELD3, H.TIME_FIELD3, LocalDateTime.of(LocalDate.of(2015, 4, 14), LocalTime.of(12, 28, 42, 123456789)));
+      LocalDateTime expectedLocalDateTime2 = LocalDateTime.of(LocalDate.of(2008, 1, 15), LocalTime.of(16, 53, 8));
+      line.writeLocalDateTime(H.DATE_FIELD2, H.TIME_FIELD2, expectedLocalDateTime2);
+      LocalDateTime expectedLocalDateTime3 = LocalDateTime.of(LocalDate.of(2015, 4, 14), LocalTime.of(12, 28, 42, 123456789));
+      line.writeLocalDateTime(H.DATE_FIELD3, H.TIME_FIELD3, expectedLocalDateTime3);
       line.writeBigDecimal(H.BIG_INTEGER_FIELD, H.BIG_INTEGER_FIELD_EXPONENT, BigDecimal.valueOf(12345L, 2), 2);
     });
     assertEquals("H200104051015152008011516535320150414122829230123452", content);

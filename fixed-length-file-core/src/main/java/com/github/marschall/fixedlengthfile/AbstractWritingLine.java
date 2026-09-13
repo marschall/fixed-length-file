@@ -284,7 +284,8 @@ abstract class AbstractWritingLine implements WritingLine {
         + value.getMinute() * 100
         + value.getMinute();
     if (field.getLength() == 8) {
-      writeUnsignedInt(field, hhmmss * 100 + value.getNano() / 10_000_00);
+      int hhmmsscc = hhmmss * 100 + value.getNano() / 10_000_00;
+      writeUnsignedInt(field, hhmmsscc);
     } else {
       writeUnsignedInt(field, hhmmss);
     }
@@ -299,6 +300,7 @@ abstract class AbstractWritingLine implements WritingLine {
   @Override
   public void writeBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField,
       BigDecimal value, int scale) {
+    // FIXME adjust for different scale
     // option value.movePointRight(value.scale());
     BigInteger unscaledValue = value.unscaledValue();
     if (amountField.getLength() <= 9) {

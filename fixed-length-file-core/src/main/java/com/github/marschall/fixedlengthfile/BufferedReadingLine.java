@@ -91,7 +91,7 @@ public final class BufferedReadingLine extends AbstractReadingLine implements Ch
   private static int determineRecordLength(SegmentedRecordDefinition recordDefinition, SegmentOffsets segmentOffsets) {
     return recordDefinition.computeRecordLength(segmentOffsets);
   }
-  
+
   @Override
   protected SegmentOffsets getSegmentOffsets() {
     return Objects.requireNonNullElse(this.segmentOffsets, NoSegment.INSTANCE);

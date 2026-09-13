@@ -23,15 +23,19 @@ import org.openjdk.jol.info.ClassLayout;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.FieldDefinition.SegmentFieldDefinition;
 import com.github.marschall.fixedlengthfile.FileDefinition.Version;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
+import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
 
 class ReadingLineTests {
 
-  private static final FileDefinition FILE_DEFINITION2 = new FileDefinition(Version.of(1, 0), List.of(R2.definition()));
   private static final FileDefinition FILE_DEFINITION1 = new FileDefinition(Version.of(1, 0), List.of(R1.definition()));
-  private static final String LINE2 = "RFi\u00E9ld2Fi\u00E9l    \u00E9ld4  \u00E9ld       34";
+  private static final FileDefinition FILE_DEFINITION2 = new FileDefinition(Version.of(1, 0), List.of(R2.definition()));
+
   private static final String LINE1 = "RFi\u00E9ld1Fi\u00E9ld  i\u00E9ld3  \u00E9l        12";
+  private static final String LINE2 = "RFi\u00E9ld2Fi\u00E9l    \u00E9ld4  \u00E9ld       34";
+  private static final String LINE3 = "RY20260809205213205214561234567890122";
 
   static final class R1 {
 
@@ -81,6 +85,49 @@ class ReadingLineTests {
 
     static RecordDefinition definition() {
       return new FixedLengthRecordDefinition("R", List.of(TYPE, DATE_FIELD, TIME_FIELD6, TIME_FIELD8, AMOUNT_FIELD, EXPONENT_FIELD));
+    }
+
+  }
+
+  static final class R3 {
+
+    static final StringFieldDefinition TYPE;
+    static final StringFieldDefinition SEGMENT_INDICATOR;
+
+    static {
+      TYPE = new StringFieldDefinition("TYPE", 1, 0);
+      SEGMENT_INDICATOR = new StringFieldDefinition("SEG-IND1", 1, TYPE.getOffset() + TYPE.getLength());
+    }
+
+    static RecordDefinition definition() {
+      return new SegmentedRecordDefinition("R", List.of(TYPE, SEGMENT_INDICATOR), List.of(Segment1.definition()));
+    }
+
+    static final class Segment1 {
+
+      static final SegmentFieldDefinition<UnsignedFieldDefinition> DATE_FIELD;
+      static final SegmentFieldDefinition<UnsignedFieldDefinition> TIME_FIELD6;
+      static final SegmentFieldDefinition<UnsignedFieldDefinition> TIME_FIELD8;
+      static final SegmentFieldDefinition<UnsignedFieldDefinition> AMOUNT_FIELD;
+      static final SegmentFieldDefinition<UnsignedFieldDefinition> EXPONENT_FIELD;
+
+      static {
+
+        DATE_FIELD = new SegmentFieldDefinition<>(0, new UnsignedFieldDefinition("DATE-FIELD", 8, 0));
+        TIME_FIELD6 = new SegmentFieldDefinition<>(0, new UnsignedFieldDefinition("TIME-FIELD-6", 6,
+            DATE_FIELD.getDelegate().getOffset() + DATE_FIELD.getDelegate().getLength()));
+        TIME_FIELD8 = new SegmentFieldDefinition<>(0, new UnsignedFieldDefinition("TIME-FIELD-8", 8,
+            TIME_FIELD6.getDelegate().getOffset() + TIME_FIELD6.getDelegate().getLength()));
+        AMOUNT_FIELD = new SegmentFieldDefinition<>(0, new UnsignedFieldDefinition("AMOUNT-FIELD", 12,
+            TIME_FIELD8.getDelegate().getOffset() + TIME_FIELD8.getDelegate().getLength()));
+        EXPONENT_FIELD = new SegmentFieldDefinition<>(0, new UnsignedFieldDefinition("EXPONENT-FIELD", 1,
+            AMOUNT_FIELD.getDelegate().getOffset() + AMOUNT_FIELD.getDelegate().getLength()));
+      }
+
+      static RecordDefinition.SegmentDefinition definition() {
+        return new RecordDefinition.SegmentDefinition(0, R3.SEGMENT_INDICATOR, List.of(DATE_FIELD, TIME_FIELD6, TIME_FIELD8, AMOUNT_FIELD, EXPONENT_FIELD));
+      }
+
     }
 
   }
@@ -232,6 +279,26 @@ class ReadingLineTests {
     assertEquals(34, line.readUnsignedInt(R1.FIELD6));
   }
 
+  @Test
+  void readHighLevelTypesFromSegments() throws IOException {
+    var fileDefinition = new FileDefinition(Version.of(1, 0), List.of(R3.definition()));
+    var line = new BufferedReadingLine(fileDefinition);
+    line.initializeFrom(new StringReader(LINE3));
+
+    assertEquals("R", line.readTrimmedString(R3.TYPE));
+    assertSame(SegmentIndicator.PRESENT, line.readSegmentIndicator(R3.SEGMENT_INDICATOR));
+
+    assertEquals(LocalDate.of(2026, 8, 9), line.readLocalDate(R3.Segment1.DATE_FIELD));
+    assertEquals(LocalTime.of(20, 52, 13), line.readLocalTime(R3.Segment1.TIME_FIELD6));
+    assertEquals(LocalTime.of(20, 52, 14, 560_000_000), line.readLocalTime(R3.Segment1.TIME_FIELD8));
+
+    LocalDateTime expectedLocalDateTime6 = LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13));
+    assertEquals(expectedLocalDateTime6, line.readLocalDateTime(R3.Segment1.DATE_FIELD, R3.Segment1.TIME_FIELD6));
+    LocalDateTime expectedLocalDateTime8 = LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000));
+    assertEquals(expectedLocalDateTime8, line.readLocalDateTime(R3.Segment1.DATE_FIELD, R3.Segment1.TIME_FIELD8));
+
+    assertThat(line.readBigDecimal(R3.Segment1.AMOUNT_FIELD, R3.Segment1.EXPONENT_FIELD)).isEqualByComparingTo(new BigDecimal("1234567890.12"));
+  }
 
   @Test
   void readHighLevelTypes() throws IOException {
@@ -248,8 +315,10 @@ class ReadingLineTests {
         assertEquals(LocalTime.of(20, 52, 13), line.readLocalTime(R2.TIME_FIELD6));
         assertEquals(LocalTime.of(20, 52, 14, 560_000_000), line.readLocalTime(R2.TIME_FIELD8));
 
-        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13)), line.readLocalDateTime(R2.DATE_FIELD, R2.TIME_FIELD6));
-        assertEquals(LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000)), line.readLocalDateTime(R2.DATE_FIELD, R2.TIME_FIELD8));
+        LocalDateTime expectedLocalDateTime6 = LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 13));
+        assertEquals(expectedLocalDateTime6, line.readLocalDateTime(R2.DATE_FIELD, R2.TIME_FIELD6));
+        LocalDateTime expectedLocalDateTime8 = LocalDateTime.of(LocalDate.of(2026, 8, 9), LocalTime.of(20, 52, 14, 560_000_000));
+        assertEquals(expectedLocalDateTime8, line.readLocalDateTime(R2.DATE_FIELD, R2.TIME_FIELD8));
 
         assertThat(line.readBigDecimal(R2.AMOUNT_FIELD, R2.EXPONENT_FIELD)).isEqualByComparingTo(new BigDecimal("1234567890.12"));
       });
