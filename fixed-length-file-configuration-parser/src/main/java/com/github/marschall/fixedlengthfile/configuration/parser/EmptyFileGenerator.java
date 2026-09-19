@@ -146,7 +146,7 @@ public final class EmptyFileGenerator {
     int recordLength = segmentedRecordDefinition.getBaseLength();
     MemorySegment recordSegment = fileSegment.asSlice(state.getLineStart(), recordLength);
     WritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
-    List<? extends OffsetFieldDefinition> fields = segmentedRecordDefinition.getFixedFields();
+    List<? extends OffsetFieldDefinition> fields = segmentedRecordDefinition.getFields();
     writeTypeField(segmentedRecordDefinition, fields.getFirst(), line);
     for (OffsetFieldDefinition field : fields.subList(1, fields.size())) {
       switch (field) {

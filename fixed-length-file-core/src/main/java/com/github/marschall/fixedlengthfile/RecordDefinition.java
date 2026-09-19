@@ -26,6 +26,8 @@ public abstract sealed class RecordDefinition {
   public abstract int getBaseLength();
 
   public abstract int getMaximumLength();
+  
+  public abstract List<? extends OffsetFieldDefinition> getFields();
 
   public String getType() {
     return this.type;
@@ -57,6 +59,7 @@ public abstract sealed class RecordDefinition {
       return this.length;
     }
 
+    @Override
     public List<? extends OffsetFieldDefinition> getFields() {
       return this.fields;
     }
@@ -115,11 +118,11 @@ public abstract sealed class RecordDefinition {
       return this.segmentDefinitions;
     }
 
-    public List<? extends OffsetFieldDefinition> getFixedFields() {
+    @Override
+    public List<? extends OffsetFieldDefinition> getFields() {
       return this.fixedFields;
     }
 
-    
     public int getTotalFieldCount() {
       int totalFieldCount = this.baseRecordCount;
       for (var segmentDefinition : this.segmentDefinitions) {

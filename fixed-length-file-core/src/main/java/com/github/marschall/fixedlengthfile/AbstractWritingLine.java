@@ -14,9 +14,19 @@ import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.Comp
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.FieldDefinition.SegmentFieldDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
+import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentDefinition;
+import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
+import com.github.marschall.fixedlengthfile.SegmentOffsets.ArrayBasedSegmentOffsets;
 
 abstract class AbstractWritingLine implements WritingLine {
+  
+  private SegmentOffsets segmentOffsets;
+  
+  AbstractWritingLine() {
+    this.segmentOffsets = SegmentOffsets.NoSegment.INSTANCE;
+  }
   
   // abstract methods
 
@@ -55,20 +65,73 @@ abstract class AbstractWritingLine implements WritingLine {
     }
     return 19;
   }
-  
-  // intialization
 
-  void initializeFor(FixedLengthRecordDefinition recordDefinition) {
+  // intialization
+  void intitalizeFor(SegmentedRecordDefinition recordDefinition, List<SegmentIndicator> segmentIndicators) {
+    List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
+    if (segmentDefinitions.size() != segmentIndicators.size()) {
+      throw new IllegalArgumentException("segment indicator list mismatch");
+    }
     // TODO cache
-    Initializer initializer = buildInitializer(recordDefinition);
-    initializer.initialize(this);
-    
+    this.segmentOffsets = createSegmentOffsets(recordDefinition, segmentIndicators);
+    int recordLength = recordDefinition.computeRecordLength(this.segmentOffsets);
+    this.doSetLength(recordLength);
+    // initialize all the segment indicators
+    for (int i = 0; i < segmentDefinitions.size(); i++) {
+      StringFieldDefinition segmentIndicatorField = segmentDefinitions.get(i).getSegmentIndicatorField();
+      var segmentIndicator = segmentIndicators.get(i);
+      this.writeSegmentIndicator(segmentIndicatorField, segmentIndicator);
+    }
+  }
+
+  protected abstract void doSetLength(int recordLength);
+
+  private SegmentOffsets createSegmentOffsets(SegmentedRecordDefinition recordDefinition, List<SegmentIndicator> segmentIndicators) {
+    List<SegmentDefinition> segmentDefinitions = recordDefinition.getSegmentDefinitions();
+    int offset = recordDefinition.getBaseLength();
+    var segmentOffsets = new ArrayBasedSegmentOffsets(segmentDefinitions.size());
+    for (int i = 0; i < segmentDefinitions.size(); i++) {
+      var segmentDefinition = segmentDefinitions.get(i);
+      var segmentIndicator = segmentIndicators.get(i);
+      switch (segmentIndicator) {
+        case PRESENT -> {
+          segmentOffsets.setSegmentOffset(i, offset);
+          offset += segmentDefinition.getLength();
+        }
+        case SPACES -> {
+          segmentOffsets.setSegmentIsSpaces(i);
+          offset += segmentDefinition.getLength();
+        }
+        case ABSENT -> {
+          segmentOffsets.setSegmentNotPresent(i);
+        }
+      };
+
+    }
+    return segmentOffsets;
+  }
+  
+  void initializeFor(SegmentedRecordDefinition recordDefinition, List<SegmentIndicator> segmentIndicators) {
     // first field is record type
     StringFieldDefinition recordDefinitionField = (StringFieldDefinition) recordDefinition.getFields().getFirst();
     this.writeString(recordDefinitionField, recordDefinition.getType());
+    
+    // TODO cache
+    Initializer initializer = buildInitializer(recordDefinition);
+    initializer.initialize(this);
   }
-  
-  static Initializer buildInitializer(FixedLengthRecordDefinition recordDefinition) {
+
+  void initializeFor(FixedLengthRecordDefinition recordDefinition) {
+    // first field is record type
+    StringFieldDefinition recordDefinitionField = (StringFieldDefinition) recordDefinition.getFields().getFirst();
+    this.writeString(recordDefinitionField, recordDefinition.getType());
+
+    // TODO cache
+    Initializer initializer = buildInitializer(recordDefinition);
+    initializer.initialize(this);
+  }
+
+  static Initializer buildInitializer(RecordDefinition recordDefinition) {
     List<? extends OffsetFieldDefinition> allFields = recordDefinition.getFields();
     // the first field is the record type, this has to be set always
     return buildInitializer(allFields.subList(1, allFields.size()));
@@ -95,12 +158,38 @@ abstract class AbstractWritingLine implements WritingLine {
     initializers.add(instantiateInitializer(previousType, currentOffset, currentLength));
     return new CompositeInitializer(initializers);
   }
-  
+
+  private static Initializer buildInitializer(int segmentStart, List<SegmentFieldDefinition> fields) {
+    List<Initializer> initializers = new ArrayList<>();
+    SegmentFieldDefinition<?> firstField = fields.getFirst();
+    int currentOffset = segmentStart + firstField.getDelegate().getOffset();
+    int currentLength = firstField.getLength();
+    FieldType previousType = getType(firstField);
+    for (SegmentFieldDefinition<?> fieldDefinition : fields.subList(1, fields.size())) {
+      FieldType currentType = getType(fieldDefinition);
+      if (currentType == previousType) {
+        currentLength += fieldDefinition.getLength();
+      } else {
+        initializers.add(instantiateInitializer(previousType, currentOffset, currentLength));
+        
+        currentOffset = segmentStart + fieldDefinition.getDelegate().getOffset();
+        currentLength = fieldDefinition.getLength();
+        previousType = currentType;
+      }
+    }
+    initializers.add(instantiateInitializer(previousType, currentOffset, currentLength));
+    return new CompositeInitializer(initializers);
+  }
+
   private static Initializer instantiateInitializer(FieldType type, int offset, int length) {
     return switch(type) {
       case CHAR -> new CharInitializer(offset, length);
       case NUM -> new NumInitializer(offset, length);
     };
+  }
+  
+  private static FieldType getType(SegmentFieldDefinition<?> fieldDefinition) {
+    return getType(fieldDefinition.getDelegate());
   }
 
   private static FieldType getType(OffsetFieldDefinition fieldDefinition) {

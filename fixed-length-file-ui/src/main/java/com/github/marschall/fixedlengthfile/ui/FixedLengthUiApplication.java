@@ -139,7 +139,7 @@ public class FixedLengthUiApplication {
         FixedLengthTableModel tableModel = new FixedLengthTableModel(columnModels);
         tableModel.loadFile(file, locators);
         SwingUtilities.invokeLater(() -> addTab(path, tableModel));
-      } catch (IOException e) {
+      } catch (Exception e) {
         e.printStackTrace(System.err);
       }
     });
@@ -154,7 +154,7 @@ public class FixedLengthUiApplication {
   static List<ColumnModel> buildColumnModelList(FileDefinition fileDefinition, String recordType) {
     SegmentedRecordDefinition recordDefinition = (SegmentedRecordDefinition) fileDefinition.getRecordDefinition(recordType);
     List<ColumnModel> models = new ArrayList<>();
-    for (OffsetFieldDefinition fieldDefinition : recordDefinition.getFixedFields()) {
+    for (OffsetFieldDefinition fieldDefinition : recordDefinition.getFields()) {
       Class<?> valueType = getValueType(fieldDefinition);
       ValueAccessor accessor = getAccessor(fieldDefinition);
       models.add(new ColumnModel(valueType, accessor, fieldDefinition));

@@ -9,12 +9,17 @@ import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinitio
 
 public final class Latin1MemorySegmentWritingLine extends AbstractWritingLine {
 
-  private final MemorySegment segment;
+  private MemorySegment segment;
 
   public Latin1MemorySegmentWritingLine(MemorySegment segment) {
     this.segment = segment;
   }
   
+  @Override
+  protected void doSetLength(int recordLength) {
+    this.segment = this.segment.asSlice(0, recordLength);
+  }
+
   @Override
   public void writeUnsignedInt(UnsignedFieldDefinition field, int value) {
     // RREVIEW other option

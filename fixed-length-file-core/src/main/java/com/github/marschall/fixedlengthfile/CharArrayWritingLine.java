@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
-import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
-
 public final class CharArrayWritingLine extends AbstractWritingLine {
   
   private final char[] buffer;
@@ -15,12 +13,12 @@ public final class CharArrayWritingLine extends AbstractWritingLine {
     this.buffer = new char[length + 2]; // for CR LF
     this.length = -1;
   }
-
-  void initializeFor(FixedLengthRecordDefinition recordDefinition) {
-    this.length = recordDefinition.getBaseLength();
-    super.initializeFor(recordDefinition);
-  }
   
+  @Override
+  protected void doSetLength(int recordLength) {
+    this.length = recordLength;
+  }
+
   void exportTo(Writer writer) throws IOException {
     if (this.length == -1) {
       throw new IllegalArgumentException("line has not yet been initialize");

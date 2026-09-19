@@ -9,8 +9,6 @@ import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinitio
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
 
 public interface WritingLine {
-  
-  // TODO LocalDate, LocalTime, LocalDateTime, BigDecimal
 
   void writeUnsignedInt(UnsignedFieldDefinition field, int value);
 
@@ -33,5 +31,7 @@ public interface WritingLine {
   void writeLocalDateTime(UnsignedFieldDefinition dateField, UnsignedFieldDefinition timeField, LocalDateTime value);
 
   void writeBigDecimal(UnsignedFieldDefinition amountField, UnsignedFieldDefinition exponentField, BigDecimal value, int scale);
+  
+  // TODO segment based methods
 
 }
