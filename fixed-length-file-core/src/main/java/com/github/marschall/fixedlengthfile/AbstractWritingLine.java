@@ -8,9 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.CharInitializer;
-import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractOffsetLengthInitializer.NumInitializer;
-import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.CompositeInitializer;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractTangoInitializer.CharTangoInitializer;
+import com.github.marschall.fixedlengthfile.AbstractWritingLine.Initializer.AbstractTangoInitializer.NumTangoInitializer;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
@@ -76,19 +75,11 @@ abstract class AbstractWritingLine implements WritingLine {
     this.segmentOffsets = createSegmentOffsets(recordDefinition, segmentIndicators);
     int recordLength = recordDefinition.computeRecordLength(this.segmentOffsets);
     this.doSetLength(recordLength);
-    
+
     // first field is record type
     StringFieldDefinition recordDefinitionField = (StringFieldDefinition) recordDefinition.getFields().getFirst();
     this.writeString(recordDefinitionField, recordDefinition.getType());
-    
-    // initialize all the segment indicators
-    for (int i = 0; i < segmentDefinitions.size(); i++) {
-      StringFieldDefinition segmentIndicatorField = segmentDefinitions.get(i).getSegmentIndicatorField();
-      var segmentIndicator = segmentIndicators.get(i);
-      this.writeSegmentIndicator(segmentIndicatorField, segmentIndicator);
-    }
-    
-    
+
     // TODO cache
     Initializer baseInitializer = buildRecordInitializer(recordDefinition);
     List<SegmentInitializer> segmentInitializers = new ArrayList<>(segmentDefinitions.size());
@@ -97,6 +88,13 @@ abstract class AbstractWritingLine implements WritingLine {
     }
     SegmentedRecordInitializer recordInitializer = new SegmentedRecordInitializer(baseInitializer, segmentInitializers);
     recordInitializer.initialize(this, recordDefinitionField.getLength(), segmentIndicators);
+    
+    // write the segment indicators afterwards, the we initialized with the default values
+    for (int i = 0; i < segmentDefinitions.size(); i++) {
+      StringFieldDefinition segmentIndicatorField = segmentDefinitions.get(i).getSegmentIndicatorField();
+      var segmentIndicator = segmentIndicators.get(i);
+      this.writeSegmentIndicator(segmentIndicatorField, segmentIndicator);
+    }
   }
 
   protected abstract void doSetLength(int recordLength);
@@ -150,34 +148,36 @@ abstract class AbstractWritingLine implements WritingLine {
   }
 
   private static Initializer buildFieldInitializer(List<? extends OffsetFieldDefinition> fields) {
-    List<Initializer> initializers = new ArrayList<>();
+    List<Short> initializers = new ArrayList<>();
     OffsetFieldDefinition firstField = fields.getFirst();
     int currentLength = firstField.getLength();
-    FieldType previousType = getType(firstField);
+    FieldType firstType = getType(firstField);
+    FieldType previousType = firstType;
     for (OffsetFieldDefinition fieldDefinition : fields.subList(1, fields.size())) {
       FieldType currentType = getType(fieldDefinition);
       if (currentType == previousType) {
+        // merge consecutive fields of the same type
         currentLength += fieldDefinition.getLength();
       } else {
-        initializers.add(instantiateInitializer(previousType, currentLength));
+        initializers.add(Utils.toPositiveShortExact(currentLength));
 
         currentLength = fieldDefinition.getLength();
         previousType = currentType;
       }
     }
-    initializers.add(instantiateInitializer(previousType, currentLength));
-    return new CompositeInitializer(initializers);
-  }
-
-  private static Initializer instantiateInitializer(FieldType type, int length) {
-    return switch(type) {
-      case CHAR -> new CharInitializer(length);
-      case NUM -> new NumInitializer(length);
-    };
+    initializers.add(Utils.toPositiveShortExact(currentLength));
+    return instantiateInitializer(firstType, initializers);
   }
   
-  private static FieldType getType(SegmentFieldDefinition<?> fieldDefinition) {
-    return getType(fieldDefinition.getDelegate());
+  private static Initializer instantiateInitializer(FieldType firstType, List<Short> lengths) {
+    short[] values = new short[lengths.size()];
+    for (int i = 0; i < values.length; i++) {
+      values[i] = lengths.get(i);
+    }
+    return switch(firstType) {
+      case CHAR -> new CharTangoInitializer(values);
+      case NUM -> new NumTangoInitializer(values);
+    };
   }
 
   private static FieldType getType(OffsetFieldDefinition fieldDefinition) {
@@ -231,7 +231,7 @@ abstract class AbstractWritingLine implements WritingLine {
 
     int initialize(AbstractWritingLine line, int offset, SegmentIndicator segmentIndicator) {
       if (segmentIndicator == SegmentIndicator.ABSENT) {
-        return offset;
+        return 0;
       }
       return this.delegate.initialize(line, offset);
     }
@@ -242,25 +242,9 @@ abstract class AbstractWritingLine implements WritingLine {
 
     int initialize(AbstractWritingLine line, int offset);
 
-    static final class CompositeInitializer implements Initializer {
-
-      private final List<Initializer> initializers;
-
-      CompositeInitializer(List<Initializer> initializers) {
-        this.initializers = Objects.requireNonNull(initializers, "segmentInitializers");
-      }
-
-      @Override
-      public int initialize(AbstractWritingLine line, int initalOffset) {
-        int offset = initalOffset;
-        for (Initializer initializer : this.initializers) {
-          offset += initializer.initialize(line, offset);
-        }
-        return initalOffset - offset;
-      }
-
-    }
-
+    /**
+     * Exploits the fact that we have only interleaving NUM and CHAR types.
+     */
     abstract sealed class AbstractTangoInitializer implements Initializer {
 
       private final short[] fieldLengths;
@@ -293,7 +277,7 @@ abstract class AbstractWritingLine implements WritingLine {
 
       abstract FieldType getInitialType();
 
-      final class CharTangoInitializer extends AbstractTangoInitializer {
+      static final class CharTangoInitializer extends AbstractTangoInitializer {
 
         CharTangoInitializer(short[] fieldLengths) {
           super(fieldLengths);
@@ -306,7 +290,7 @@ abstract class AbstractWritingLine implements WritingLine {
 
       }
 
-      final class NumTangoInitializer extends AbstractTangoInitializer {
+      static final class NumTangoInitializer extends AbstractTangoInitializer {
 
         NumTangoInitializer(short[] fieldLengths) {
           super(fieldLengths);
@@ -315,51 +299,6 @@ abstract class AbstractWritingLine implements WritingLine {
         @Override
         FieldType getInitialType() {
           return FieldType.NUM;
-        }
-
-      }
-
-    }
-
-    abstract sealed static class AbstractOffsetLengthInitializer implements Initializer {
-
-      private final short length;
-
-      protected AbstractOffsetLengthInitializer(int length) {
-        if (length < 0 || length > Short.MAX_VALUE) {
-          throw new IllegalArgumentException();
-        }
-        this.length = (short) length;
-      }
-
-      protected int getLength() {
-        return this.length;
-      }
-
-      static final class CharInitializer extends AbstractOffsetLengthInitializer {
-
-        CharInitializer(int length) {
-          super(length);
-        }
-        
-        @Override
-        public int initialize(AbstractWritingLine line, int offset) {
-          line.writePaddingString(offset, this.getLength());
-          return this.getLength();
-        }
-
-      }
-
-      static final class NumInitializer extends AbstractOffsetLengthInitializer {
-
-        NumInitializer(int length) {
-          super(length);
-        }
-        
-        @Override
-        public int initialize(AbstractWritingLine line, int offset) {
-          line.writePaddingNumber(offset, this.getLength());
-          return this.getLength();
         }
 
       }

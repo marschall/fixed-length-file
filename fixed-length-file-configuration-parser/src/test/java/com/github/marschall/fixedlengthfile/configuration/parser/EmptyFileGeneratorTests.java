@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -39,6 +40,7 @@ class EmptyFileGeneratorTests {
   @Disabled
   @Test
   void generateFile() throws IOException {
+    Files.deleteIfExists(this.path);
     Path output = this.path;
     this.generator.generateFile(output, 1_000);
   }
