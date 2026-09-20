@@ -3,9 +3,12 @@ package com.github.marschall.fixedlengthfile;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import java.lang.foreign.MemorySegment;
+import java.util.List;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.UnsignedFieldDefinition;
+import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
+import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentedRecordDefinition;
 
 public final class Latin1MemorySegmentWritingLine extends AbstractWritingLine {
 
@@ -13,6 +16,16 @@ public final class Latin1MemorySegmentWritingLine extends AbstractWritingLine {
 
   public Latin1MemorySegmentWritingLine(MemorySegment segment) {
     this.segment = segment;
+  }
+
+  @Override
+  public void initializeFor(SegmentedRecordDefinition recordDefinition, List<SegmentIndicator> segmentIndicators) {
+    super.initializeFor(recordDefinition, segmentIndicators);
+  }
+
+  @Override
+  public void initializeFor(FixedLengthRecordDefinition recordDefinition) {
+    super.initializeFor(recordDefinition);
   }
   
   @Override

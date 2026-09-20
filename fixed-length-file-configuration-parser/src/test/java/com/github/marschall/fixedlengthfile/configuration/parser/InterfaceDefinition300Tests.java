@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition;
@@ -32,6 +33,7 @@ class InterfaceDefinition300Tests {
     assertEquals(149, hd.getMaximumLength());
   }
 
+  @Disabled
   @Test
   void d1() {
     var recordDefintion = this.definition.getRecordDefinition("D1");

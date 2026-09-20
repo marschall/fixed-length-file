@@ -63,7 +63,7 @@ class ConfigurationParserTests {
 
   @Test
   void parseVariant() throws Exception {
-    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3000",  "xml");
+    Path referenceFile = Helper.findFileIn(Paths.get("src/test/resources/reference"), "3006",  "xml");
     assertNotNull(referenceFile);
     List<RecordDefinition> recordDefinitions = this.parser.parse(referenceFile, Set.of("HD", "D1", "D3", "TR"));
     assertThat(recordDefinitions).hasSize(4);
