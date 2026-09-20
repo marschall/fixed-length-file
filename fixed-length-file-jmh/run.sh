@@ -12,7 +12,7 @@ $JAVA_HOME/bin/java \
   -Xmx128m \
   -XX:+UseSerialGC \
   -jar target/fixed-length-file-jmh-1.0.0-SNAPSHOT.jar \
-     "com\\.github\\.marschall\\.fixedlengthfile\\.jmh\\.ByteCopierBenchmarks" \
+     "com\\.github\\.marschall\\.fixedlengthfile\\.jmh\\.WritingLineBenchmarks" \
      -jvmArgs "-XX:+UseParallelGC -Xmx8g  --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow" \
      -foe true \
      -rf text
