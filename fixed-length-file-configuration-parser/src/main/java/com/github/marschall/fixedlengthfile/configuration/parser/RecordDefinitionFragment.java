@@ -55,8 +55,15 @@ public abstract sealed class RecordDefinitionFragment {
 
   static final class SegmentDefinition extends RecordDefinitionFragment {
 
-    SegmentDefinition(List<Field> fields) {
+    private final int segmentIndex;
+
+    SegmentDefinition(int segmentIndex, List<Field> fields) {
       super(fields);
+      this.segmentIndex = segmentIndex;
+    }
+
+    public int getSegmentIndex() {
+      return this.segmentIndex;
     }
 
   }

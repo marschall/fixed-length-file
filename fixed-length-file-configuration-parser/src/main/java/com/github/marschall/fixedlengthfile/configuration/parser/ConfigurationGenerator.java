@@ -8,6 +8,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -64,6 +65,7 @@ public class ConfigurationGenerator {
   }
 
   private void generate(InterfaceVersion currentVersion, List<RecordDefinition> recordDefintions, Path outputDirectory, String packageName, String className) throws IOException {
+    // public final class packageName.className
     TypeSpec.Builder constantContainerBuilder = TypeSpec.classBuilder(ClassName.get(packageName, className))
         .addModifiers(PUBLIC, FINAL);
 
@@ -91,18 +93,21 @@ public class ConfigurationGenerator {
   }
 
   private void addRecordDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition) {
-    String fieldList = recordDefinition.getFields().stream()
-        .map(Field::id)
-        .collect(joining(", "));
+    // public static RecordDefinition definition()
     MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
         .returns(RECORD_DEFINITION)
         .addModifiers(PUBLIC, STATIC);
+    String fieldList = recordDefinition.getFields().stream()
+        .map(Field::id)
+        .collect(joining(", "));
     if (recordDefinition.hasSegments()) {
       String segmentDefinitions = IntStream.rangeClosed(1, recordDefinition.getSegments().size())
           .mapToObj(i -> "Segment" + i + ".definition()")
           .collect(joining(", "));
+      // return new SegmentedRecordDefinition(recordType, List.of(fixedFields), List.of(fixedFields), List.of(segmentDefinitions))
       definitionBuilder.addStatement("return new $T($S, $T.of(" + fieldList + "), $T.of(" + segmentDefinitions + "))", SEGMENTED_RECORD_DEFINITION, recordDefinition.getName(), LIST, LIST);
     } else {
+      // return new FixedLengthRecordDefinition(recordType, List.of(fixedFields), List.of(fixedFields))
       definitionBuilder.addStatement("return new $T($S, $T.of(" + fieldList + "))", FIXED_LENGTH_RECORD_DEFINITION, recordDefinition.getName(), LIST);
     }
     recordSpecBuilder.addMethod(definitionBuilder.build());
@@ -114,6 +119,9 @@ public class ConfigurationGenerator {
         .map(recordName -> recordName + ".definition()")
         .collect(joining(", "));
     Version fileDefinitionVersion = currentVersion.toFileDefinitionVersion();
+    
+    // public static FileDefinition definition()
+    //   return new FileDefinition(FileDefinition.Version.of(major, minor), List.of(recordDefinitions))
     MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
         .returns(FILE_DEFINITION)
         .addModifiers(PUBLIC, STATIC)
@@ -124,38 +132,59 @@ public class ConfigurationGenerator {
     constantContainerBuilder.addMethod(definitionBuilder.build());
   }
   
-  private void addSegmentDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition, int segmentIndex, SegmentDefinition segmentDefinition, List<String> segmentIndicators) {
+  private void addSegmentDefinitionMethod(TypeSpec.Builder recordSpecBuilder, RecordDefinition recordDefinition, int segmentIndicatorIndex, SegmentDefinition segmentDefinition, String segmentIndicator) {
     String fieldList = segmentDefinition.getFields().stream()
         .map(Field::id)
         .collect(joining(", "));
-    // TODO nicer model
-    String segmentIndicatorField = recordDefinition.getName() + "." + segmentIndicators.get(segmentIndex);
+    String segmentIndicatorField = recordDefinition.getName() + "." + segmentIndicator;
+
+    // public static SegmentDefinition definition()
+    //   return new SegmentDefinition(segmentIndicatorIndex, segmentIndicatorField, List.of(fields))
     MethodSpec.Builder definitionBuilder = MethodSpec.methodBuilder("definition")
         .returns(SEGMENT_DEFINITION)
         .addModifiers(PUBLIC, STATIC)
-        .addStatement("return new $T($L, " + segmentIndicatorField + ", $T.of(" + fieldList + "))", SEGMENT_DEFINITION, segmentIndex, LIST);
+        .addStatement("return new $T($L, " + segmentIndicatorField + ", $T.of(" + fieldList + "))", SEGMENT_DEFINITION, segmentIndicatorIndex, LIST);
     recordSpecBuilder.addMethod(definitionBuilder.build());
   }
 
   private void addSegments(RecordDefinition recordDefinition, ClassName interfaceDefinitionClassName, TypeSpec.Builder recordSpecBuilder) {
-    int segmentIndex = 0;
     List<String> segmentIndicators = this.segmentIndicatorFieldIdStrategy.getSegmentIndicatorFieldIds(recordDefinition);
+    List<String> segmentIndicatorInRecord = new ArrayList<>();
+    Iterator<Field> reverseFieldIterator = recordDefinition.getFields().reversed().iterator();
+    while (segmentIndicators.size() > segmentIndicatorInRecord.size()) {
+      Field field = reverseFieldIterator.next();
+      if (segmentIndicators.contains(field.id())) {
+        segmentIndicatorInRecord.add(field.id());
+      }
+    }
+    segmentIndicatorInRecord = segmentIndicatorInRecord.reversed();
+    
     for (SegmentDefinition segment : recordDefinition.getSegments()) {
+      int segmentIndex = segment.getSegmentIndex();
+      // public static final class Segment(i + 1)
       TypeSpec.Builder segmentSpecBuilder = TypeSpec.classBuilder(interfaceDefinitionClassName.nestedClass("Segment" + (segmentIndex + 1)))
               .addModifiers(PUBLIC, STATIC, FINAL);
       for (Field field : segment.getFields()) {
         FieldSpec fieldSpec = buildSegmentFieldSpec(segmentIndex, field);
         segmentSpecBuilder.addField(fieldSpec);
       }
-      addSegmentDefinitionMethod(segmentSpecBuilder, recordDefinition, segmentIndex, segment, segmentIndicators);
+      int segmentIndicatorIndex = segmentIndicatorInRecord.indexOf(segmentIndicators.get(segmentIndex));
+      String segmentIndicator = segmentIndicators.get(segment.getSegmentIndex());
+      addSegmentDefinitionMethod(segmentSpecBuilder, recordDefinition, segmentIndicatorIndex, segment, segmentIndicator);
       recordSpecBuilder.addType(segmentSpecBuilder.build());
-      segmentIndex += 1;
     }
   }
 
   @FunctionalInterface
   interface SegmentIndicatorFieldIdStrategy {
 
+    /**
+     * Return the name of the segment indicators in the order as they segments appear. This does
+     * not have the be the order as the indicators appear in the record.
+     * 
+     * @param recordDefinition the record definition
+     * @return the segment indicator names ordered in segment order
+     */
     List<String> getSegmentIndicatorFieldIds(RecordDefinition recordDefinition);
 
     static SegmentIndicatorFieldIdStrategy trailingFieldIds() {

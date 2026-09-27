@@ -141,10 +141,10 @@ public abstract sealed class RecordDefinition {
 
     private final int length;
 
-    private final int segmentIndex;
+    private final int segmentIndicatorIndex;
 
-    public SegmentDefinition(int segmentIndex, StringFieldDefinition segmentIndicatorField, List<SegmentFieldDefinition<?>> fields) {
-      this.segmentIndex = segmentIndex;
+    public SegmentDefinition(int segmentIndicatorIndex, StringFieldDefinition segmentIndicatorField, List<SegmentFieldDefinition<?>> fields) {
+      this.segmentIndicatorIndex = segmentIndicatorIndex;
       this.segmentIndicatorField = Objects.requireNonNull(segmentIndicatorField, "segment indicator field");
       this.fields = fields;
       this.length = computeLength(fields);
@@ -152,6 +152,10 @@ public abstract sealed class RecordDefinition {
 
     public int getLength() {
       return this.length;
+    }
+
+    public int getSegmentIndicatorIndex() {
+      return this.segmentIndicatorIndex;
     }
 
     public StringFieldDefinition getSegmentIndicatorField() {

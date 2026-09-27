@@ -71,7 +71,7 @@ public class ConfigurationParser {
       boolean isFixedSegment = isFirstSegment || "true".equals(continueNumbering);
       if (!isFixedSegment) {
         if (currentFields != fields) {
-          segments.add(new SegmentDefinition(currentFields));
+          segments.add(new SegmentDefinition(segments.size(), currentFields));
         }
         currentFields = new ArrayList<>();
       }
@@ -102,7 +102,7 @@ public class ConfigurationParser {
       isFirstSegment = false;
     }
     if (currentFields != fields) {
-      segments.add(new SegmentDefinition(currentFields));
+      segments.add(new SegmentDefinition(segments.size(), currentFields));
     }
     return new RecordDefinition(recordName, fields, segments);
   }

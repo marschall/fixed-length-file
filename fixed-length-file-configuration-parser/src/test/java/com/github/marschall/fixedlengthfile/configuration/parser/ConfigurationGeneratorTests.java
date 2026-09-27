@@ -32,7 +32,7 @@ class ConfigurationGeneratorTests {
   }
 
   private static SegmentIndicatorFieldIdStrategy hardCodedFieldIds() {
-    return _ -> List.of("D50", "D51", "D52", "D53");
+    return _ -> List.of("D50", "D52", "D51", "D53");
   }
 
 }

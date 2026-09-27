@@ -1,6 +1,7 @@
 package com.github.marschall.fixedlengthfile.configuration.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
@@ -38,6 +39,7 @@ class InterfaceDefinition267Tests {
     SegmentedRecordDefinition kt = assertInstanceOf(SegmentedRecordDefinition.class, recordDefintion);
     assertEquals(47 + 109 + 741 + 14 + 296 + 35 + 248 + 187 + 526 + 116 + 184 + 355 + 8, kt.getBaseLength());
     assertEquals(4525, kt.getMaximumLength());
+    
     List<SegmentDefinition> segmentDefinitions = kt.getSegmentDefinitions();
     assertThat(segmentDefinitions).hasSize(8);
     List<String> segmentIndicatorFields = segmentDefinitions.stream()
@@ -45,6 +47,10 @@ class InterfaceDefinition267Tests {
         .map(FieldDefinition::getName)
         .toList();
     assertEquals(List.of("KT66A", "KT66B", "KT67", "KT68", "KT69", "KT70", "KT71", "KT72"), segmentIndicatorFields);
+    int[] segmentIndicatorIndices = segmentDefinitions.stream()
+        .mapToInt(SegmentDefinition::getSegmentIndicatorIndex)
+        .toArray();
+    assertArrayEquals(new int[] {0, 1, 2, 3, 4, 5, 6, 7}, segmentIndicatorIndices);
   }
 
   @Test

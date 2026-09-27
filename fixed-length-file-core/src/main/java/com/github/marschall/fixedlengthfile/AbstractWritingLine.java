@@ -105,7 +105,8 @@ abstract class AbstractWritingLine implements WritingLine {
     var segmentOffsets = new ArrayBasedSegmentOffsets(segmentDefinitions.size());
     for (int i = 0; i < segmentDefinitions.size(); i++) {
       var segmentDefinition = segmentDefinitions.get(i);
-      var segmentIndicator = segmentIndicators.get(i);
+      int segmentIndicatorIndex = segmentDefinition.getSegmentIndicatorIndex();
+      var segmentIndicator = segmentIndicators.get(segmentIndicatorIndex);
       switch (segmentIndicator) {
         case PRESENT -> {
           segmentOffsets.setSegmentOffset(i, offset);
