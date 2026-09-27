@@ -12,6 +12,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
@@ -92,11 +93,17 @@ class CharArrayWritingLineTests {
 
   }
 
-  private static String writeLine(RecordDefinition recordDefinition, Consumer<WritingLine> lineConsumer) throws IOException {
+  private CharArrayWritingLineCreator lineCreator;
+  
+  @BeforeEach
+  void setUp() {
+    this.lineCreator = new CharArrayWritingLineCreator();
+  }
+
+  private String writeLine(RecordDefinition recordDefinition, Consumer<WritingLine> lineConsumer) throws IOException {
     FixedLengthRecordDefinition definition = (FixedLengthRecordDefinition) recordDefinition;
     int maximumLength = definition.getMaximumLength();
-    var line = new CharArrayWritingLine(maximumLength);
-    line.initializeFor(definition);
+    var line = this.lineCreator.writingLineFor(definition);
 
     lineConsumer.accept(line);
 
@@ -115,7 +122,7 @@ class CharArrayWritingLineTests {
       line.writeUnsignedInt(R.FIELD6, 12);
       line.writeUnsignedInt(R.FIELD7, 3);
     });
-    assertEquals("RFi\u00E9ld1Fi\u00E9ld       1203", content);
+    assertEquals("RFi\u00E9ld1Fi\u00E9ld       1203\r\n", content);
   }
 
   @Test
@@ -123,7 +130,7 @@ class CharArrayWritingLineTests {
     String content = writeLine(R.definition(), _ -> {
       // empty
     });
-    assertEquals("R                  0000", content);
+    assertEquals("R                  0000\r\n", content);
   }
 
   @Test
@@ -146,7 +153,7 @@ class CharArrayWritingLineTests {
       line.writeLocalDateTime(H.DATE_FIELD3, H.TIME_FIELD3, expectedLocalDateTime3);
       line.writeBigDecimal(H.BIG_INTEGER_FIELD, H.BIG_INTEGER_FIELD_EXPONENT, BigDecimal.valueOf(12345L, 2), 2);
     });
-    assertEquals("H200104051015152008011516535320150414122829230123452", content);
+    assertEquals("H200104051015152008011516535320150414122829230123452\r\n", content);
   }
 
   @Test
@@ -154,7 +161,7 @@ class CharArrayWritingLineTests {
     String content = writeLine(H2.definition(), line -> {
       line.writeBigDecimal(H2.BIG_INTEGER_FIELD, H2.BIG_INTEGER_FIELD_EXPONENT, BigDecimal.valueOf(1234L), 2);
     });
-    assertEquals("H1234002", content);
+    assertEquals("H1234002\r\n", content);
   }
 
 }

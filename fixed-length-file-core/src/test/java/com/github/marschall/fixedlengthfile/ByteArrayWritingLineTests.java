@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.fixedlengthfile.FieldDefinition.OffsetFieldDefinition.StringFieldDefinition;
@@ -94,11 +95,17 @@ class ByteArrayWritingLineTests {
 
   }
 
-  private static String writeLine(RecordDefinition recordDefinition, Consumer<WritingLine> lineConsumer) throws IOException {
+  private ByteArrayWritingLineCreator lineCreator;
+  
+  @BeforeEach
+  void setUp() {
+    this.lineCreator = new ByteArrayWritingLineCreator();
+  }
+
+  private String writeLine(RecordDefinition recordDefinition, Consumer<WritingLine> lineConsumer) throws IOException {
     FixedLengthRecordDefinition definition = (FixedLengthRecordDefinition) recordDefinition;
     int maximumLength = definition.getMaximumLength();
-    var line = new ByteArrayWritingLine(maximumLength);
-    line.initializeFor(definition);
+    var line = this.lineCreator.writingLineFor(definition);
 
     lineConsumer.accept(line);
 

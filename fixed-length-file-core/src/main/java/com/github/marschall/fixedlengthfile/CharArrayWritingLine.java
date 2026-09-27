@@ -3,8 +3,12 @@ package com.github.marschall.fixedlengthfile;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Objects;
 
 public final class CharArrayWritingLine extends AbstractWritingLine {
+  
+  private static final char CR = '\r';
+  private static final char LF = '\n';
   
   private final char[] buffer;
   private int length;
@@ -23,24 +27,27 @@ public final class CharArrayWritingLine extends AbstractWritingLine {
     if (this.length == -1) {
       throw new IllegalArgumentException("line has not yet been initialize");
     }
-    writer.write(this.buffer, 0, this.length);
+    // append CR LF
+    this.buffer[this.length] = CR;
+    this.buffer[this.length + 1] = LF;
+    writer.write(this.buffer, 0, this.length + 2);
   }
 
   @Override
   void writePaddingNumber(int offset, int padding) {
-    // TODO range check
+    Objects.checkIndex(offset + padding - 1, this.length);
     Arrays.fill(this.buffer, offset, offset + padding, '0');
   }
   
   @Override
   void writePaddingString(int offset, int padding) {
-    // TODO range check
+    Objects.checkIndex(offset + padding - 1, this.length);
     Arrays.fill(this.buffer, offset, offset + padding, ' ');
   }
   
   @Override
   void writeCharAt(int index, char c) {
-    // TODO range check
+    Objects.checkIndex(index, this.length);
     this.buffer[index] = c;
   }
 

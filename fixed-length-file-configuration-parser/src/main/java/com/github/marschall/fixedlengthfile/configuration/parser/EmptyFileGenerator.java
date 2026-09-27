@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 
 import com.github.marschall.fixedlengthfile.FileDefinition;
 import com.github.marschall.fixedlengthfile.Latin1MemorySegmentWritingLine;
+import com.github.marschall.fixedlengthfile.Latin1MemorySegmentWritingLineCreator;
 import com.github.marschall.fixedlengthfile.RecordDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.FixedLengthRecordDefinition;
 import com.github.marschall.fixedlengthfile.RecordDefinition.SegmentDefinition;
@@ -58,8 +59,10 @@ public final class EmptyFileGenerator {
 
     private int currentRecordSequenceNumber;
     private int lineStart;
+    private final Latin1MemorySegmentWritingLineCreator lineCreator;
 
-    State() {
+    State(Latin1MemorySegmentWritingLineCreator lineCreator) {
+      this.lineCreator = lineCreator;
       this.currentRecordSequenceNumber = 0;
       this.lineStart = 0;
     }
@@ -77,12 +80,16 @@ public final class EmptyFileGenerator {
       this.currentRecordSequenceNumber += 1;
     }
 
+    Latin1MemorySegmentWritingLineCreator getLineCreator() {
+      return this.lineCreator;
+    }
+
   }
 
   private void writeLines(int lineCount, MemorySegment segment) {
     List<RecordDefinition> recordDefinitions = this.fileDefinition.getRecordDefinitions();
 
-    var state = new State();
+    var state = new State(new Latin1MemorySegmentWritingLineCreator(segment));
     RecordDefinition header = recordDefinitions.getFirst();
     writeHeader(segment, state, this.fileDefinition, (FixedLengthRecordDefinition) header);
 
@@ -136,9 +143,7 @@ public final class EmptyFileGenerator {
 
   private int writeEmptySegmentedLine(MemorySegment fileSegment, State state, SegmentedRecordDefinition segmentedRecordDefinition, List<SegmentIndicator> segmentIndicators, Consumer<WritingLine> lineConsumer) {
     int recordLength = segmentedRecordDefinition.getBaseLength();
-    MemorySegment recordSegment = fileSegment.asSlice(state.getLineStart(), recordLength);
-    Latin1MemorySegmentWritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
-    line.initializeFor(segmentedRecordDefinition, segmentIndicators);
+    Latin1MemorySegmentWritingLine line = state.getLineCreator().writingLineFor(segmentedRecordDefinition, segmentIndicators);
 
     lineConsumer.accept(line);
     return recordLength;
@@ -146,10 +151,8 @@ public final class EmptyFileGenerator {
 
   private int writeEmptyFixedLine(MemorySegment fileSegment, State state, FixedLengthRecordDefinition fixedRecordDefinition, Consumer<WritingLine> lineConsumer) {
     int recordLength = fixedRecordDefinition.getBaseLength();
-    MemorySegment recordSegment = fileSegment.asSlice(state.getLineStart(), recordLength);
 
-    Latin1MemorySegmentWritingLine line = new Latin1MemorySegmentWritingLine(recordSegment);
-    line.initializeFor(fixedRecordDefinition);
+    Latin1MemorySegmentWritingLine line = state.getLineCreator().writingLineFor(fixedRecordDefinition);
     lineConsumer.accept(line);
 
     return recordLength;

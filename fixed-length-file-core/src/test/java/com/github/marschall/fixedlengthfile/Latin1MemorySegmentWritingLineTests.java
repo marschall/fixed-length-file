@@ -45,8 +45,8 @@ class Latin1MemorySegmentWritingLineTests {
 
     byte[] target = new byte[recordDefinition.getMaximumLength()];
     MemorySegment segment = MemorySegment.ofArray(target);
-    var line = new Latin1MemorySegmentWritingLine(segment);
-    line.initializeFor(recordDefinition);
+    var lineCreator = new Latin1MemorySegmentWritingLineCreator(segment);
+    var line = lineCreator.writingLineFor(recordDefinition);
 
     lineConsumer.accept(line);
 
